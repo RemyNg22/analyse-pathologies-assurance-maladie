@@ -1,0 +1,12 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Environnement virtuel
+venv/
+
+# Fichier d'architecture (racine)
+architecture.txt
+
+# Fichier de données (850Mo)
+data/*.csv
