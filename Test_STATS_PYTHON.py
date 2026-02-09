@@ -342,6 +342,71 @@ def stats_par_tranche_age(donnees: list[dict], pathologie: str) -> dict:
 
     return resultats
 
+
+def variation_prevalence_entre_ages(
+    donnees: list[dict],
+    pathologie: str,
+    tranche_age_1: str,
+    tranche_age_2: str
+) -> float | None:
+    """
+    Calcule la variation de prévalence entre deux tranches d'âge
+    pour une pathologie donnée.
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+
+    donnees_tranche_1 = filtrer_par_age(donnees_patho, tranche_age_1)
+    donnees_tranche_2 = filtrer_par_age(donnees_patho, tranche_age_2)
+
+    if not donnees_tranche_1 or not donnees_tranche_2:
+        return None
+
+    prev_1 = prevalence_globale(donnees_tranche_1)
+    prev_2 = prevalence_globale(donnees_tranche_2)
+
+    return prev_2 - prev_1
+
+
+
+def age_central_pathologie(donnees: list[dict], pathologie: str) -> tuple | None:
+    """
+    Retourne la tranche d'âge pour laquelle la prévalence de la pathologie
+    est la plus élevée et sa valeur.
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+
+    if not donnees_patho:
+        return None
+
+    resultats = {}
+
+    for age in tranches_age_distinctes(donnees_patho):
+        sous_ensemble = filtrer_par_age(donnees_patho, age)
+        resultats[age] = prevalence_globale(sous_ensemble)
+
+    tranche_max = max(resultats, key=resultats.get)
+    return tranche_max, resultats[tranche_max]
+
+
+def stats_par_annee(donnees:list[dict], pathologie: str) -> dict:
+    """
+    Calcule les statistiques descriptives par année
+    pour une pathologie donnée.
+    """
+    
+    resultats = {}
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    annees_differentes = annees_distinctes(donnees_patho)
+    
+    for annee in annees_differentes:
+        sous_ensemble = filtrer_par_annee(donnees_patho, annee)
+        stats = statistiques_descriptives(sous_ensemble)
+        resultats[annee] = stats
+
+    return resultats
+
 #TEST DE FONCTION
 donnees = charger_echantillon(5)
 patho = pathologies_distinctes(donnees)

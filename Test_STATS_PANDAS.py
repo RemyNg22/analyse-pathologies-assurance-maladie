@@ -378,11 +378,77 @@ def stats_par_tranche_age(df: pd.DataFrame, pathologie: str) -> dict:
     return resultats
 
 
+def difference_prevalence_age(df: pd.DataFrame,
+                               pathologie: str,
+                               tranche_age_1: str,
+                               tranche_age_2: str) -> float | None:
+    """
+    Calcule la différence de prévalence globale entre deux tranches d'âge
+    pour une pathologie donnée, selon l'ordre fourni :
 
-#TEST DE FONCTION
-tableau = charger_effectifs()
-patho = tableau["pathologie"].unique()[:3]
+    différence = prévalence(tranche_age_1) - prévalence(tranche_age_2)
+
+    Renvoie None si l'une des tranches ou la pathologie est absente.
+    """
+
+    stats_tranche_age = stats_par_tranche_age(df, pathologie)
+
+    prev_glob_t1 = stats_tranche_age.get(tranche_age_1, {}).get("prevalence_globale")
+    prev_glob_t2 = stats_tranche_age.get(tranche_age_2, {}).get("prevalence_globale")
+
+    if prev_glob_t1 is None or prev_glob_t2 is None:
+        return None
+
+    return round(prev_glob_t1 - prev_glob_t2, 3)
 
 
-for d in patho:
-    print(stats_par_tranche_age(tableau, d))
+
+def age_central_pathologie(df: pd.DataFrame, pathologie: str) -> tuple[str, float] | None:
+    """
+    Retourne la tranche d'âge pour laquelle la prévalence globale
+    de la pathologie est la plus élevée, ainsi que sa valeur.
+    """
+
+    stats_age = stats_par_tranche_age(df, pathologie)
+
+    if not stats_age:
+        return None
+
+    # Extraction des prévalences par tranche d'âge
+    prevalences = {
+        tranche: stats.get("prevalence_globale")
+        for tranche, stats in stats_age.items()
+        if stats.get("prevalence_globale") is not None
+    }
+
+    if not prevalences:
+        return None
+
+    tranche_max = max(prevalences, key=prevalences.get)
+    return tranche_max, round(prevalences[tranche_max], 3)
+
+
+def stats_par_annee(df: pd.DataFrame, pathologie: str) -> dict:
+    """
+    Statistiques par annee pour une pathologie.
+    
+    :param df: DataFrame Pandas
+    :param pathologie: nom du traitement/pathologie étudiée
+    :return: dict avec les années comme clés et les stats Pandas comme valeurs
+    """
+    resultats = {}
+    df_patho = df[df['pathologie'] == pathologie]
+
+    annees_differentes = df_patho['annee'].unique()
+
+    for annee in annees_differentes:
+        resultats[annee] = stats_patho(df_patho, pathologie, annee=annee)
+
+    return dict(sorted(resultats.items()))
+
+
+# Test de fonction
+echantillon = charger_effectifs()
+pathologie = "Diabète"
+print(stats_par_annee(echantillon, pathologie))
+
