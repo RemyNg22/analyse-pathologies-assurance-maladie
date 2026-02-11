@@ -1,5 +1,4 @@
 import csv
-import utils.conversion as conversion
 import urllib.request
 import utils.conversion as conversion
 

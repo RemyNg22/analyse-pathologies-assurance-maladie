@@ -105,6 +105,29 @@ class Conversion_donnees:
         "999": "France entière"
     }
 
+    ORDRE_TRANCHES_AGE = [
+        "de 0 à 4 ans",
+        "de 5 à 9 ans",
+        "de 10 à 14 ans",
+        "de 15 à 19 ans",
+        "de 20 à 24 ans",
+        "de 25 à 29 ans",
+        "de 30 à 34 ans",
+        "de 35 à 39 ans",
+        "de 40 à 44 ans",
+        "de 45 à 49 ans",
+        "de 50 à 54 ans",
+        "de 55 à 59 ans",
+        "de 60 à 64 ans",
+        "de 65 à 69 ans",
+        "de 70 à 74 ans",
+        "de 75 à 79 ans",
+        "de 80 à 84 ans",
+        "de 85 à 89 ans",
+        "de 90 à 94 ans",
+        "de 95 ans et plus"
+    ]
+
     @classmethod
     def departement(cls, code):
 
@@ -130,3 +153,7 @@ class Conversion_donnees:
             if valeur and valeur.strip():
                 return valeur, champ
         return "Non renseigné", "inconnu"
+
+
+    def ordre_tranches_age(self) -> list[str]:
+        return self.ORDRE_TRANCHES_AGE

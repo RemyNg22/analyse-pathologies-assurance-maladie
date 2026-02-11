@@ -189,14 +189,13 @@ def prevalence_moyenne(df: pd.DataFrame) -> float:
 
 
 
-def stats_patho(df: pd.DataFrame, 
+def stats_patho(df: pd.DataFrame,
                 pathologie: str,
                 sexe: str | None = None,
                 age: str | None = None,
                 departement: str | None = None,
                 annee: int | None = None
                 ) -> pd.Series:
-
     """
     Calcule des statistiques descriptives de prévalence pour une pathologie donnée,
     avec filtres optionnels (sexe, âge, département, année).
@@ -219,69 +218,68 @@ def stats_patho(df: pd.DataFrame,
     :return: Series Pandas contenant les statistiques agrégées
         pour la pathologie filtrée
     """
-
-    # Filtrage selon les critères
+    
     df_filtre = df[df["pathologie"] == pathologie]
+    if sexe: df_filtre = df_filtre[df_filtre["libelle_sexe"] == sexe]
+    if age: df_filtre = df_filtre[df_filtre["libelle_classe_age"] == age]
+    if departement: df_filtre = df_filtre[df_filtre["departement"] == departement]
+    if annee: df_filtre = df_filtre[df_filtre["annee"] == annee]
 
-    if sexe is not None:
-        df_filtre = df_filtre[df_filtre["libelle_sexe"] == sexe]
-    if age is not None:
-        df_filtre = df_filtre[df_filtre["libelle_classe_age"] == age]
-    if departement is not None:
-        df_filtre = df_filtre[df_filtre["departement"] == departement]
-    if annee is not None:
-        df_filtre = df_filtre[df_filtre["annee"] == annee]
-
-    # Si le filtrage donne un DataFrame vide, renvoyer un Series rempli de 0
     if df_filtre.empty:
         return pd.Series({
-            "Ntop_totale": 0,
-            "Npop_totale": 0,
-            "prevalence_moyenne": 0.0,
-            "prevalence_mediane": 0.0,
-            "prevalence_min": 0.0,
-            "prevalence_max": 0.0,
-            "ecart_type": 0.0,
-            "prevalence_globale": 0.0
+            "Ntop_totale": 0, "Npop_totale": 0,
+            "prevalence_globale": 0.0,
+            "prevalence_moyenne": 0.0, "prevalence_mediane": 0.0,
+            "prevalence_min": 0.0, "prevalence_max": 0.0, "ecart_type": 0.0
         })
 
-    # Calcul des statistiques
     Ntop_totale = df_filtre["Ntop"].sum()
     Npop_totale = df_filtre["Npop"].sum()
-    prevalence_moyenne = df_filtre["prev"].mean()
-    prevalence_mediane = df_filtre["prev"].median()
-    prevalence_min = df_filtre["prev"].min()
-    prevalence_max = df_filtre["prev"].max()
-    ecart_type = df_filtre["prev"].std()
-    prevalence_globale = (Ntop_totale / Npop_totale * 100) if Npop_totale > 0 else 0.0
-
-    # Retourne un Series avec arrondi à 3 décimales
+    prev_globale = (Ntop_totale / Npop_totale * 100) if Npop_totale else 0
+    prev = df_filtre["prev"]
+    
     return pd.Series({
         "Ntop_totale": Ntop_totale,
         "Npop_totale": Npop_totale,
-        "prevalence_moyenne": round(prevalence_moyenne, 3),
-        "prevalence_mediane": round(prevalence_mediane, 3),
-        "prevalence_min": round(prevalence_min, 3),
-        "prevalence_max": round(prevalence_max, 3),
-        "ecart_type": round(ecart_type, 3) if not pd.isna(ecart_type) else 0.0,
-        "prevalence_globale": round(prevalence_globale, 3)
+        "prevalence_globale": round(prev_globale, 3),
+        "prevalence_moyenne": round(prev.mean(), 3),
+        "prevalence_mediane": round(prev.median(), 3),
+        "prevalence_min": round(prev.min(), 3),
+        "prevalence_max": round(prev.max(), 3),
+        "ecart_type": round(prev.std(), 3)
     })
 
 
 
-def stats_par_sexe(df: pd.DataFrame, pathologie: str) -> dict:
+def stats_par_sexe(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
     """
     Statistiques par sexe pour une pathologie.
     :param df: DataFrame Pandas
     :param pathologie: nom du traitement/pathologie étudiée
-    :return: Dict Pandas retournant les stats par pathologie et par sexe
+    :return: DataFrame Pandas retournant les stats par pathologie et par sexe
     """
+    df_filtre = df[(df['pathologie'] == pathologie) & (df['libelle_sexe'] != 'tous sexes')]
+    if df_filtre.empty:
+        return pd.DataFrame()
 
-    resultats = {}
-    for sexe in ("hommes", "femmes"):
-        # Passe le df filtré au sexe à stats_patho
-        resultats[sexe] = stats_patho(df, pathologie, sexe=sexe)
-    return resultats
+    resultats = []
+    for sexe, groupe in df_filtre.groupby('libelle_sexe'):
+        Ntop_totale = groupe['Ntop'].sum()
+        Npop_totale = groupe['Npop'].sum()
+        prevalence_globale = (Ntop_totale / Npop_totale * 100) if Npop_totale else 0
+        resultats.append({
+            'sexe': sexe,
+            'Ntop_totale': Ntop_totale,
+            'Npop_totale': Npop_totale,
+            'prevalence_globale': round(prevalence_globale, 3),
+            'prevalence_moyenne': round(groupe['prev'].mean(), 3),
+            'prevalence_mediane': round(groupe['prev'].median(), 3),
+            'prevalence_min': round(groupe['prev'].min(), 3),
+            'prevalence_max': round(groupe['prev'].max(), 3),
+            'ecart_type': round(groupe['prev'].std(), 3)
+        })
+    
+    return pd.DataFrame(resultats).set_index('sexe')
 
 
 
@@ -290,7 +288,6 @@ def ratio_cas_hf(df: pd.DataFrame, pathologie: str) -> float | None:
     Calcule le ratio hommes / femmes pour une pathologie donnée à partir d'un DataFrame Pandas.
 
     Le ratio est basé sur la somme des effectifs de patients pris en charge (Ntop) par sexe.
-    Cette version réutilise la fonction stats_par_sexe pour le filtrage et l'agrégation.
 
     Limites :
     - Le ratio reflète un rapport d’effectifs observés et non un risque ou une
@@ -301,16 +298,11 @@ def ratio_cas_hf(df: pd.DataFrame, pathologie: str) -> float | None:
     :param pathologie: str, nom de la pathologie
     :return: float arrondi à 3 décimales ou None si non calculable
     """
-
-    stats_hf = stats_par_sexe(df, pathologie)
-
-    nb_hommes = stats_hf.get("hommes", {}).get("Ntop_totale", 0)
-    nb_femmes = stats_hf.get("femmes", {}).get("Ntop_totale", 0)
-
-    if nb_femmes == 0:
+    df_filtre = df[(df['pathologie'] == pathologie) & (df['libelle_sexe'] != 'tous sexes')]
+    stats_hf = df_filtre.groupby('libelle_sexe')['Ntop'].sum()
+    if 'hommes' not in stats_hf or 'femmes' not in stats_hf or stats_hf['femmes'] == 0:
         return None
-
-    return round(nb_hommes / nb_femmes, 3)
+    return round(stats_hf['hommes'] / stats_hf['femmes'], 3)
 
 
 def difference_prevalence_sexe(df: pd.DataFrame, pathologie: str) -> float | None:
@@ -324,64 +316,59 @@ def difference_prevalence_sexe(df: pd.DataFrame, pathologie: str) -> float | Non
     :param pathologie: nom de la pathologie
     :return: différence de prévalence (%) arrondie à 3 décimales, ou None si non calculable
     """
-
-    stats_hf = stats_par_sexe(df, pathologie)
-
-    prev_glob_h = stats_hf.get("hommes", {}).get("prevalence_globale")
-    prev_glob_f = stats_hf.get("femmes", {}).get("prevalence_globale")
-
-    if prev_glob_h is None or prev_glob_f is None:
-        return None
-
-    return round(prev_glob_h - prev_glob_f, 3)
-
-
-
-def tranches_age_distinctes_df(df: pd.DataFrame) -> list:
-    """
-    Retourne les tranches d'âge distinctes présentes dans un DataFrame Pandas,
-    triées par ordre croissant, en excluant 'tous âges' mais en conservant
-    'plus de 95 ans' à la fin.
+    df_filtre = df[(df['pathologie'] == pathologie) & (df['libelle_sexe'].str.lower() != 'tous sexes')]
     
-    :param df: DataFrame Pandas
-    :return: liste triée des tranches d'âge
+    stats_hf = df_filtre.groupby(df_filtre['libelle_sexe'].str.lower())[["Ntop", "Npop"]].sum()
+    
+    if 'hommes' not in stats_hf.index or 'femmes' not in stats_hf.index:
+        return None
+    if stats_hf.loc['hommes', 'Npop'] == 0 or stats_hf.loc['femmes', 'Npop'] == 0:
+        return None
+    
+    prev_h = stats_hf.loc['hommes', 'Ntop'] / stats_hf.loc['hommes', 'Npop'] * 100
+    prev_f = stats_hf.loc['femmes', 'Ntop'] / stats_hf.loc['femmes', 'Npop'] * 100
+    return round(prev_h - prev_f, 3)
+
+
+
+def stats_par_tranche_age(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
     """
-    tranches = [t for t in df['libelle_classe_age'].unique() if t != "tous âges"]
-
-    def age_min(tranche: str) -> int:
-        if "plus de" in tranche:
-            return 999  # pour que "plus de 95 ans" soit à la fin
-        start = tranche.split()[1]  # "de X à Y ans"
-        return int(start)
-
-    return sorted(tranches, key=age_min)
-
-
-
-def stats_par_tranche_age(df: pd.DataFrame, pathologie: str) -> dict:
-    """
-    Statistiques par tranche d'âge pour une pathologie, en utilisant
-    tranches_age_distinctes_df pour le tri.
+    Statistiques par tranche d'âge pour une pathologie.
     
     :param df: DataFrame Pandas
     :param pathologie: nom du traitement/pathologie étudiée
-    :return: dict avec les tranches d'âge comme clés et les stats Pandas comme valeurs
+    :return: DataFrame Pandas avec les tranches d'âge en lignes et les statistiques en colonnes
     """
-    resultats = {}
-    df_patho = df[df['pathologie'] == pathologie]
+    df_filtre = df[df["pathologie"] == pathologie].copy()
+    if df_filtre.empty:
+        return pd.DataFrame()
 
-    tranches_tries = tranches_age_distinctes_df(df_patho)
+    conv = conversion.Conversion_donnees()
+    
+    df_filtre["libelle_classe_age"] = pd.Categorical(
+        df_filtre["libelle_classe_age"],
+        categories=conv.ordre_tranches_age(), ordered=True)
+    
+    df_filtre = df_filtre.sort_values("libelle_classe_age")
 
-    for age in tranches_tries:
-        resultats[age] = stats_patho(df_patho, pathologie, age=age)
 
-    return resultats
+    stats = (
+        df_filtre
+        .groupby("libelle_classe_age", sort=True, observed=True)
+        .agg(Ntop_totale=("Ntop", "sum"), Npop_totale=("Npop", "sum"),)
+    )
+
+    stats["prevalence_globale"] = (stats["Ntop_totale"] / stats["Npop_totale"]) * 100
+
+    stats.loc[stats["Npop_totale"] == 0, "prevalence_globale"] = None
+
+    return stats.round(3)
 
 
 def difference_prevalence_age(df: pd.DataFrame,
-                               pathologie: str,
-                               tranche_age_1: str,
-                               tranche_age_2: str) -> float | None:
+                              pathologie: str,
+                              tranche_age_1: str,
+                              tranche_age_2: str) -> float | None:
     """
     Calcule la différence de prévalence globale entre deux tranches d'âge
     pour une pathologie donnée, selon l'ordre fourni :
@@ -393,62 +380,115 @@ def difference_prevalence_age(df: pd.DataFrame,
 
     stats_tranche_age = stats_par_tranche_age(df, pathologie)
 
-    prev_glob_t1 = stats_tranche_age.get(tranche_age_1, {}).get("prevalence_globale")
-    prev_glob_t2 = stats_tranche_age.get(tranche_age_2, {}).get("prevalence_globale")
 
-    if prev_glob_t1 is None or prev_glob_t2 is None:
+    if tranche_age_1 not in stats_tranche_age.index or tranche_age_2 not in stats_tranche_age.index:
         return None
 
-    return round(prev_glob_t1 - prev_glob_t2, 3)
+    prev_t1 = stats_tranche_age.loc[tranche_age_1, "prevalence_globale"]
+    prev_t2 = stats_tranche_age.loc[tranche_age_2, "prevalence_globale"]
 
+    if prev_t1 is None or prev_t2 is None:
+        return None
+
+    return round(prev_t1 - prev_t2, 3)
 
 
 def age_central_pathologie(df: pd.DataFrame, pathologie: str) -> tuple[str, float] | None:
     """
     Retourne la tranche d'âge pour laquelle la prévalence globale
     de la pathologie est la plus élevée, ainsi que sa valeur.
+    Renvoie None si la pathologie n'est pas présente.
     """
-
-    stats_age = stats_par_tranche_age(df, pathologie)
-
-    if not stats_age:
+    stats_tranche_age = stats_par_tranche_age(df, pathologie)
+    
+    if stats_tranche_age.empty:
         return None
 
-    # Extraction des prévalences par tranche d'âge
-    prevalences = {
-        tranche: stats.get("prevalence_globale")
-        for tranche, stats in stats_age.items()
-        if stats.get("prevalence_globale") is not None
-    }
+    tranche_max = stats_tranche_age["prevalence_globale"].idxmax()
+    valeur_max = stats_tranche_age["prevalence_globale"].max()
 
-    if not prevalences:
-        return None
-
-    tranche_max = max(prevalences, key=prevalences.get)
-    return tranche_max, round(prevalences[tranche_max], 3)
+    return tranche_max, round(valeur_max, 3)
 
 
-def stats_par_annee(df: pd.DataFrame, pathologie: str) -> dict:
+
+def stats_par_annee(df: pd.DataFrame, pathologie: str) -> pd.DataFrame | None:
     """
     Statistiques par annee pour une pathologie.
     
     :param df: DataFrame Pandas
     :param pathologie: nom du traitement/pathologie étudiée
-    :return: dict avec les années comme clés et les stats Pandas comme valeurs
+    :return: DataFrame Pandas avec les années en lignes et les statistiques en colonnes
     """
-    resultats = {}
-    df_patho = df[df['pathologie'] == pathologie]
+    df_filtre = df[df["pathologie"] == pathologie].copy()
+    if df_filtre.empty:
+        return pd.DataFrame()
 
-    annees_differentes = df_patho['annee'].unique()
+    df_filtre = df_filtre.sort_values("annee")
 
-    for annee in annees_differentes:
-        resultats[annee] = stats_patho(df_patho, pathologie, annee=annee)
+    stats= (
+        df_filtre
+        .groupby("annee", sort=True).agg(Ntop_totale=("Ntop", "sum"), Npop_totale=("Npop", "sum"),)
+    )
 
-    return dict(sorted(resultats.items()))
+    stats["prevalence_globale"] = (stats["Ntop_totale"] / stats["Npop_totale"]) * 100
+
+    stats.loc[stats["Npop_totale"] == 0, "prevalence_globale"] = None
+
+    if stats.empty:
+        return None
+
+    return stats.round(3)
+
+
+def variation_annuelle(df: pd.DataFrame, pathologie: str) -> dict:
+    """
+    Calcule la variation annuelle de la prévalence globale pour une pathologie donnée.
+
+    Pour chaque année (à partir de la deuxième), retourne :
+    - la différence absolue de prévalence par rapport à l'année précédente
+    - la variation relative en pourcentage
+
+    Si la prévalence de l'année précédente est nulle, la variation relative est None.
+
+    :param df: DataFrame Pandas
+    :param pathologie: nom du traitement/pathologie étudiée
+    :return: dict avec pour chaque annee la difference absolue et la "valeur relative
+    """
+
+    df_patho = df[df['pathologie'] == pathologie].copy()
+    if df_patho.empty:
+        return None
+
+    stats_annee = (
+        df_patho.groupby('annee', sort=True)
+        .agg(Ntop_totale=('Ntop', 'sum'), Npop_totale=('Npop', 'sum'))
+    )
+    stats_annee['prevalence_globale'] = (
+        stats_annee['Ntop_totale'] / stats_annee['Npop_totale'] * 100
+    )
+    stats_annee.loc[stats_annee['Npop_totale'] == 0, 'prevalence_globale'] = None
+
+
+    variation = {}
+    prev_values = stats_annee['prevalence_globale'].tolist()
+    annees = stats_annee.index.tolist()
+
+    for i in range(1, len(annees)):
+        diff_abs = round(prev_values[i] - prev_values[i-1], 3)
+        if prev_values[i-1] in [0, None]:
+            val_rel = None
+        else:
+            val_rel = round((diff_abs / prev_values[i-1]) * 100, 3)
+        variation[annees[i]] = {
+            "difference absolue": diff_abs,
+            "valeur relative": val_rel
+        }
+
+    return variation
 
 
 # Test de fonction
 echantillon = charger_effectifs()
 pathologie = "Diabète"
-print(stats_par_annee(echantillon, pathologie))
+print(variation_annuelle(echantillon, pathologie))
 

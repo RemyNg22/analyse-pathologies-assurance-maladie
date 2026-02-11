@@ -405,7 +405,60 @@ def stats_par_annee(donnees:list[dict], pathologie: str) -> dict:
         stats = statistiques_descriptives(sous_ensemble)
         resultats[annee] = stats
 
-    return resultats
+    return dict(sorted(resultats.items()))
+
+
+
+def variation_annuelle(donnees: list[dict], pathologie: str) -> dict:
+    """
+    Calcule la variation annuelle de la prévalence globale pour une pathologie donnée.
+
+    Pour chaque année (à partir de la deuxième), retourne :
+    - la différence absolue de prévalence par rapport à l'année précédente
+    - la variation relative en pourcentage
+
+    Si la prévalence de l'année précédente est nulle, la variation relative est None.
+
+    :param donnees: données de santé nettoyées
+    :param pathologie: pathologie étudiée
+    :return: variations annuelles de la prévalence
+    """
+    prev_par_annee = {}
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    annees_differentes = sorted(annees_distinctes(donnees_patho))
+
+    for annee in annees_differentes:
+        sous_ensemble = filtrer_par_annee(donnees_patho, annee)
+        prev_par_annee[annee] = prevalence_globale(sous_ensemble)
+
+    variation = {}
+
+    for i in range(1, len(annees_differentes)):
+        annee = annees_differentes[i]
+        annee_prec = annees_differentes[i - 1]
+
+        diff_abs = round(
+            prev_par_annee[annee] - prev_par_annee[annee_prec],
+            3
+        )
+
+
+        if prev_par_annee[annee_prec] == 0:
+            val_rel = None
+        else:
+            val_rel = round(
+                (diff_abs / prev_par_annee[annee_prec]) * 100,
+                3
+            )
+
+        variation[annee] = {
+            "difference absolue": diff_abs,
+            "valeur relative": val_rel
+        }
+
+    return variation
+
 
 #TEST DE FONCTION
 donnees = charger_echantillon(5)
