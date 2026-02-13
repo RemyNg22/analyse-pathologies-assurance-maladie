@@ -49,7 +49,8 @@ def charger_effectifs() -> list[dict]:
                     "Niveau_pathologie": niveau_patho,
                     "Age" : l["libelle_classe_age"],
                     "Sexe" : l["libelle_sexe"],
-                    "Departement" : departement,
+                    "Code_departement": l["dept"].strip().upper(),
+                    "Departement": departement,
                     "Ntop": int(l["Ntop"]),
                     "Npop": int(l["Npop"]),
                     "prev": float(l["prev"])

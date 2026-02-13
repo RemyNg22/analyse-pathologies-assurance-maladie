@@ -49,6 +49,9 @@ def charger_effectifs() -> pd.DataFrame:
     df = df[df["top"] != "POP_TOT_IND"]
     df = df[df["dept"] != "999"]
 
+    # Conversion du code département en str et suppression espaces
+    df["dept"] = df["dept"].astype(str).str.strip()
+
     """
     Crée la colonne ``pathologie`` en utilisant le niveau de pathologie
     le plus précis disponible :
@@ -75,7 +78,6 @@ def charger_effectifs() -> pd.DataFrame:
     df["departement"] = df["dept"].apply(conv.departement)
     
 
-    df = df.drop("dept", axis=1)
     df = df.drop(columns=["top"])
     df = df.drop(columns=["patho_niv1", "patho_niv2", "patho_niv3"])
 
@@ -487,8 +489,121 @@ def variation_annuelle(df: pd.DataFrame, pathologie: str) -> dict:
     return variation
 
 
+def tendance_generale(df: pd.DataFrame, pathologie: str) -> str | None:
+    """
+    Détermine la tendance générale de la prévalence globale
+    d'une pathologie sur la période étudiée.
+
+    La tendance est calculée à partir de la moyenne des variations
+    annuelles absolues de prévalence :
+
+    - moyenne > 0  → "hausse"
+    - moyenne < 0  → "baisse"
+    - moyenne = 0  → "stable"
+
+    Si aucune variation ne peut être calculée (ex. une seule année
+    disponible ou données absentes), la fonction retourne None.
+
+    :param df: DataFrame Pandas
+    :param pathologie: nom de la pathologie étudiée
+    :return: "hausse", "baisse", "stable" ou None
+    """
+
+    variations = variation_annuelle(df, pathologie)
+
+    if not variations:
+        return None
+
+    df_variation = pd.DataFrame(variations)
+
+    if "difference absolue" not in df_variation.index:
+        return None
+
+    moyenne_variation = df_variation.loc["difference absolue"].dropna().mean()
+
+    if pd.isna(moyenne_variation):
+        return None
+
+    moyenne_variation = round(moyenne_variation, 3)
+
+    if moyenne_variation > 0:
+        return "hausse"
+    elif moyenne_variation < 0:
+        return "baisse"
+    else:
+        return "stable"
+
+
+def pente_tendance(df: pd.DataFrame, pathologie: str) -> float | None:
+    """
+    Retourne la moyenne d'évolution annuelle de la prévalence entre
+    la première année d'observation et la dernière année.
+
+    :param df: DataFrame Pandas
+    :param pathologie: nom de la pathologie étudiée
+    :return: pente annuelle (float) ou None
+    """
+
+    stats_annee = stats_par_annee(df, pathologie)
+
+    if stats_annee.shape[0] < 2:
+        return None
+
+    stats_annee = stats_annee.sort_values("annee")
+
+    annee_debut = stats_annee.index[0]
+    annee_fin = stats_annee.index[-1]
+
+    prev_debut = stats_annee.iloc[0]["prevalence_globale"]
+    prev_fin = stats_annee.iloc[-1]["prevalence_globale"]
+
+    if pd.isna(prev_debut) or pd.isna(prev_fin):
+        return None
+
+    duree = annee_fin - annee_debut
+
+    if duree == 0:
+        return None
+
+    pente = (prev_fin - prev_debut) / duree
+
+    return round(pente, 3)
+
+
+def stats_par_departement(df: pd.DataFrame, pathologie: str) -> pd.DataFrame | None:
+    """
+    Calcule les statistiques descriptives par département
+    pour une pathologie donnée.
+    """
+    df_filtre = df[df["pathologie"] == pathologie].copy()
+    if df_filtre.empty:
+        return pd.DataFrame()
+
+    df_filtre = df_filtre.sort_values("dept")
+
+    stats = (
+        df_filtre
+        .groupby("dept", sort=True)
+        .agg(Ntop_totale=("Ntop", "sum"), Npop_totale=("Npop", "sum"))
+    )
+
+    stats["prevalence_globale"] = (stats["Ntop_totale"] / stats["Npop_totale"]) * 100
+    stats.loc[stats["Npop_totale"] == 0, "prevalence_globale"] = None
+
+
+    conv = conversion.Conversion_donnees()
+    stats["departement_nom"] = stats.index.map(conv.departement)
+
+    if stats.empty:
+        return None
+
+    return stats.round(3)
+
+
+
 # Test de fonction
-echantillon = charger_effectifs()
-pathologie = "Diabète"
-print(variation_annuelle(echantillon, pathologie))
+donnee = charger_effectifs()
+patho = "Diabète"
+
+print(stats_par_departement(donnee, patho))
 

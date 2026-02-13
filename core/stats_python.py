@@ -459,3 +459,120 @@ def variation_annuelle(donnees: list[dict], pathologie: str) -> dict:
         }
 
     return variation
+
+
+
+def tendance_generale(donnees: list[dict], pathologie: str) -> str | None:
+    """
+    Détermine la tendance générale de la prévalence globale
+    d'une pathologie sur la période étudiée.
+
+    La tendance est calculée à partir de la moyenne des variations
+    annuelles absolues de prévalence :
+
+    - moyenne > 0  → "hausse"
+    - moyenne < 0  → "baisse"
+    - moyenne = 0  → "stable"
+
+    Si aucune variation ne peut être calculée (ex. une seule année
+    disponible ou données absentes), la fonction retourne None.
+
+    :param donnees: données de santé nettoyées
+    :param pathologie: pathologie étudiée
+    :return: "hausse", "baisse", "stable" ou None
+    """
+    variations = variation_annuelle(donnees, pathologie)
+
+    if not variations:
+        return None
+
+    cumul_diff_absolue = 0
+    nb_annee = 0
+
+    for variation in variations.values():
+        diff = variation.get("difference absolue")
+
+        if diff is not None:
+            cumul_diff_absolue += diff
+            nb_annee += 1
+
+    if nb_annee == 0:
+        return None
+
+    moyenne_variation = cumul_diff_absolue / nb_annee
+
+    if moyenne_variation > 0:
+        return "hausse"
+    elif moyenne_variation < 0:
+        return "baisse"
+    else:
+        return "stable"
+    
+
+
+def pente_tendance(donnees: list[dict], pathologie: str) -> float | None:
+    """
+    Retourne la moyenne d'évolution annuelle de la prévalence entre
+    la première année d'observation et la dernière année.
+
+    :param donnees: données de santé nettoyées
+    :param pathologie: nom de la pathologie étudiée
+    :return: pente annuelle (float) ou None
+    """
+    
+    donnee_patho = filtrer_par_pathologie(donnees, pathologie)
+    stats_annee = stats_par_annee(donnees, pathologie)
+    
+    if len(stats_annee.keys()) < 2:
+        return None
+
+    premiere_annee = min(stats_annee.keys())
+    derniere_annee = max(stats_annee.keys())
+
+    donnees_prem_annee = filtrer_par_annee(donnee_patho, premiere_annee)
+    donnees_dern_annee = filtrer_par_annee(donnee_patho, derniere_annee)
+
+    prev_prem_annee = prevalence_globale(donnees_prem_annee)
+    prev_dern_annee = prevalence_globale(donnees_dern_annee)
+    
+    duree = derniere_annee - premiere_annee
+
+    if duree == 0:
+        return None
+
+    pente = (prev_dern_annee - prev_prem_annee) / duree
+
+    return round(pente, 3)
+
+
+def stats_par_departement(donnees: list[dict], pathologie: str) -> dict:
+    """
+    Calcule les statistiques descriptives par département
+    pour une pathologie donnée.
+    """
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+
+    resultats = {}
+
+    codes_departements = {d["Code_departement"] for d in donnees_patho}
+
+    for code in codes_departements:
+        sous_ensemble = [d for d in donnees_patho if d["Code_departement"] == code]
+        stats = statistiques_descriptives(sous_ensemble)
+
+        resultats[code] = {"Departement": sous_ensemble[0]["Departement"], **stats}
+
+    def cle_tri(code: str):
+        num = ""
+        lettre = ""
+        for c in code:
+            if c.isdigit():
+                num += c
+            else:
+                lettre += c
+        return (int(num), lettre)
+
+    resultats_tries = dict(sorted(resultats.items(), key=lambda x: cle_tri(x[0])))
+
+    return resultats_tries
+
