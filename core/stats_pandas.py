@@ -597,3 +597,91 @@ def stats_par_departement(df: pd.DataFrame, pathologie: str) -> pd.DataFrame | N
         return None
 
     return stats.round(3)
+
+
+def classement_departements(df: pd.DataFrame, pathologie: str) -> pd.DataFrame | None:
+    """
+    Classement par département de la prévalence globale, de la plus petite à la plus grande
+    """
+    df_tri_prev_depts = stats_par_departement(df, pathologie)
+    if df_tri_prev_depts.empty:
+        return pd.DataFrame()
+
+    df_tri_prev_depts = df_tri_prev_depts.drop(columns=["Ntop_totale", "Npop_totale"])
+    df_tri_prev_depts = df_tri_prev_depts.sort_values("prevalence_globale", ascending=True).reset_index()
+    df_tri_prev_depts = df_tri_prev_depts[["dept", "departement_nom", "prevalence_globale"]]
+    df_tri_prev_depts.index +=1
+
+    return df_tri_prev_depts
+
+
+def moyenne_nationale(df: pd.DataFrame, pathologie: str) -> float | None:
+    """
+    Calcule la prévalence nationale pondérée pour une pathologie (total_ntop / total_npop).
+    """
+    df_filtre = df[df["pathologie"] == pathologie]
+
+    if df_filtre.empty:
+        return None
+
+    total_ntop = df_filtre["Ntop"].sum()
+    total_npop = df_filtre["Npop"].sum()
+
+    if total_npop == 0:
+        return None
+
+    return round((total_ntop / total_npop) * 100, 3)
+
+
+
+def ecart_a_la_moyenne(df: pd.DataFrame, pathologie: str) -> pd.DataFrame | None:
+    """
+    Calcul pour chaque département l'écart à la moyenne calculée dans la fonction
+    moyenne_nationale pour une pathologie (prévalence globale départementale - prévalence nationale)
+    """
+
+    df_ecart = stats_par_departement(df, pathologie)
+
+    if df_ecart is None or df_ecart.empty:
+        return pd.DataFrame()
+
+    moyenne_nat = moyenne_nationale(df, pathologie)
+
+    if moyenne_nat is None:
+        return pd.DataFrame()
+
+    df_ecart = df_ecart.copy()
+
+    df_ecart["ecart_a_la_moyenne"] = (df_ecart["prevalence_globale"] - moyenne_nat)
+    df_ecart = df_ecart.drop(columns=["Ntop_totale", "Npop_totale", "prevalence_globale"])
+    df_ecart = df_ecart.sort_values("ecart_a_la_moyenne", ascending=True)
+
+    return df_ecart.round(3)
+
+
+def bottom_departements(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Renvoie les 10 départements avec la prévalence la plus faible pour une pathologie donnée
+    """
+    df_bottom_dept = classement_departements(df, pathologie)
+    if df_bottom_dept.empty:
+        return pd.DataFrame()
+
+    return df_bottom_dept.sort_values("prevalence_globale").head(10)
+
+
+
+def top_departements(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Renvoie les 10 départements avec la prévalence la plus forte pour une pathologie donnée
+    """
+    df_top_dept = classement_departements(df, pathologie)
+
+    if df_top_dept.empty:
+        return pd.DataFrame()
+
+    top10 = (df_top_dept.sort_values("prevalence_globale", ascending=False).head(10).reset_index(drop=True))
+
+    top10.index = top10.index + 1
+
+    return top10

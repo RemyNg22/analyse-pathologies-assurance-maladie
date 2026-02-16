@@ -576,3 +576,109 @@ def stats_par_departement(donnees: list[dict], pathologie: str) -> dict:
 
     return resultats_tries
 
+
+
+def classement_departements(donnees: list[dict], pathologie: str) -> list[tuple]:
+    """
+    Classement par département de la prévalence globale, de la plus petite à la plus grande
+    """
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    depts_distincts = departements_distincts(donnees_patho)
+
+    resultats = []
+
+    for dept in depts_distincts:
+        sous_ensemble = filtrer_par_departement(donnees_patho, dept)
+        prev = prevalence_globale(sous_ensemble)
+
+        if prev is not None:
+            resultats.append((dept, prev))
+
+    resultats_tries = sorted(resultats, key=lambda x: x[1])
+
+    classement = [(rang + 1, dept, prev) for rang, (dept, prev) in enumerate(resultats_tries)]
+
+    return classement
+
+
+def moyenne_nationale(donnees: list[dict], pathologie: str) -> float | None:
+    """
+    Calcule la prévalence nationale pondérée pour une pathologie (total_ntop / total_npop).
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+
+    total_ntop = 0
+    total_npop = 0
+
+    for ligne in donnees_patho:
+        total_ntop += ligne["Ntop"]
+        total_npop += ligne["Npop"]
+
+    if total_npop == 0:
+        return None
+
+    prevalence_nationale = (total_ntop / total_npop) * 100
+
+    return round(prevalence_nationale, 3)
+
+
+
+def ecart_a_la_moyenne(donnees: list[dict], pathologie: str) -> list[tuple]:
+    """
+    Calcul pour chaque département l'écart à la moyenne calculée dans la fonction
+    moyenne_nationale pour une pathologie (prévalence globale départementale - prévalence nationale)
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    depts_distincts = departements_distincts(donnees_patho)
+    
+    moyenne_nat = moyenne_nationale(donnees, pathologie)
+
+    resultats = []
+
+
+    for dept in depts_distincts:
+        sous_ensemble = filtrer_par_departement(donnees_patho, dept)
+        prev = prevalence_globale(sous_ensemble)
+
+        if prev is not None:
+            ecart = round(prev - moyenne_nat, 3)
+            resultats.append((dept, ecart))
+
+    resultats_tries = sorted(resultats, key=lambda x: x[1])
+
+    return resultats_tries
+
+
+def bottom_departements(donnees: list[dict], pathologie: str) -> list[tuple] | None:
+    """
+    Renvoie les 10 départements avec la prévalence la plus faible pour une pathologie donnée
+    """
+
+    classement = classement_departements(donnees, pathologie)
+
+    if classement is None:
+        return None
+
+    return classement[:10]
+
+
+def top_departements(donnees: list[dict], pathologie: str) -> list[tuple] | None:
+    """
+    Renvoie les 10 départements avec la prévalence la plus forte pour une pathologie donnée
+    """
+
+    classement = classement_departements(donnees, pathologie)
+
+    if classement is None:
+        return None
+
+    top10 = classement[-10:][::-1]
+
+    nouveau_classement = [
+        (rang + 1, dept, prev)
+        for rang, (_, dept, prev) in enumerate(top10)
+    ]
+
+    return nouveau_classement
