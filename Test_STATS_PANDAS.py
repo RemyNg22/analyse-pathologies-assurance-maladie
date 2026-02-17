@@ -686,9 +686,155 @@ def top_departements(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
 
     return top10
 
+
+
+def z_score_prevalence(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Calcule le z-score pour chaque département et retourne une liste triée par ordre croissant
+    (attention, c'est un z-score sur un cumul de toutes les années étudiées)
+    """
+    
+    df_z_score = stats_par_departement(df, pathologie)
+
+    if df_z_score is None or df_z_score.empty:
+        return pd.DataFrame()
+
+    moyenne_nat = moyenne_nationale(df, pathologie)
+
+    if moyenne_nat is None:
+        return pd.DataFrame()
+
+    df_z_score = df_z_score.copy()
+
+    df_z_score["z_score"] = (df_z_score["prevalence_globale"] - moyenne_nat) / df_z_score["prevalence_globale"].std()
+    df_z_score = df_z_score.drop(columns=["Ntop_totale", "Npop_totale", "prevalence_globale"])
+    df_z_score = df_z_score.sort_values("z_score").reset_index()
+
+    df_z_score.index = df_z_score.index + 1
+
+    return df_z_score
+
+
+def valeurs_aberrantes(df: pd.DataFrame, pathologie: str, seuil=2) -> pd.DataFrame:
+    """
+    Retourne les départements ayant une valeur aberrante, soit une valeur de z-score égale ou dépassant le seuil de 2 ou -2
+    (attention, le z-score est calculé sur un cumul de toutes les années étudiées)
+    """
+
+    df_val_ab = z_score_prevalence(df, pathologie)
+
+    if df_val_ab is None or df_val_ab.empty:
+        return pd.DataFrame()
+
+    df_val_ab = df_val_ab.copy()
+    df_val_ab = df_val_ab[(df_val_ab["z_score"] <= -seuil) | (df_val_ab["z_score"] >= seuil)]
+    df_val_ab = df_val_ab.reset_index(drop=True)
+    df_val_ab.index += 1
+
+    return df_val_ab
+
+
+def stats_par_departement_annee(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Calcule les statistiques descriptives par département et par année pour une pathologie donnée.
+    """
+
+    df_filtre = df[df["pathologie"] == pathologie].copy()
+
+    if df_filtre.empty:
+        return pd.DataFrame()
+
+    stats = (df_filtre.groupby(["annee", "dept"], as_index=False).agg(Ntop_totale=("Ntop", "sum"), Npop_totale=("Npop", "sum")))
+
+    stats["prevalence_globale"] = (stats["Ntop_totale"] / stats["Npop_totale"] * 100)
+
+    stats.loc[stats["Npop_totale"] == 0, "prevalence_globale"] = pd.NA
+
+    conv = conversion.Conversion_donnees()
+    stats["departement_nom"] = stats["dept"].map(conv.departement)
+
+    stats = stats.sort_values(["annee", "dept"])
+
+    stats = stats[[
+        "annee",
+        "dept",
+        "departement_nom",
+        "Ntop_totale",
+        "Npop_totale",
+        "prevalence_globale",]]
+
+    return stats.round(3)
+
+
+def moyenne_nationale_annee(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Calcule la prévalence nationale pondérée par année (somme Ntop / somme Npop * 100).
+    """
+
+    df_filtre = df[df["pathologie"] == pathologie].copy()
+
+    if df_filtre.empty:
+        return pd.DataFrame()
+
+    df_moy_nat = (df_filtre.groupby("annee", as_index=False).agg(total_ntop=("Ntop", "sum"), total_npop=("Npop", "sum")))
+
+    df_moy_nat["moyenne_nationale"] = (df_moy_nat["total_ntop"] / df_moy_nat["total_npop"] * 100)
+
+    df_moy_nat.loc[df_moy_nat["total_npop"] == 0, "moyenne_nationale"] = pd.NA
+
+    df_moy_nat = df_moy_nat[["annee", "moyenne_nationale"]]
+
+    return df_moy_nat.round(3)
+
+
+def z_score_prevalence_annee(df: pd.DataFrame, pathologie: str) -> pd.DataFrame:
+    """
+    Calcule le z-score de la prévalence pour chaque département et par année
+    en utilisant la moyenne nationale par année.
+    """
+
+    df_prev = stats_par_departement_annee(df, pathologie)
+    if df_prev.empty:
+        return pd.DataFrame()
+
+    df_moy = moyenne_nationale_annee(df, pathologie)
+    if df_moy.empty:
+        return pd.DataFrame()
+
+    df_z = df_prev.merge(df_moy, on="annee", how="left")
+
+    df_z["ecart_type"] = df_z.groupby("annee")["prevalence_globale"].transform(lambda x: x.std(ddof=1))
+
+    df_z["z_score"] = ((df_z["prevalence_globale"] - df_z["moyenne_nationale"]) / df_z["ecart_type"]).round(3)
+
+    df_z = df_z.sort_values(["annee", "z_score"]).reset_index(drop=True)
+
+    df_z = df_z[["annee", "dept", "departement_nom", "z_score"]]
+
+    return df_z
+
+
+def annees_anormales(df: pd.DataFrame, pathologie: str, seuil=2) -> pd.DataFrame:
+    """
+    Retourne les années aberrantes, c'est-à-dire les années où la moyenne absolue des z-scores (ensemble des départements)
+    est supérieur ou égale à 2 par rapport à la moyenne nationale pour une pathologie.
+    """
+
+    df_z = z_score_prevalence_annee(df, pathologie)
+    if df_z.empty:
+        return pd.DataFrame()
+
+    df_moy_abs = (df_z.groupby("annee")["z_score"].apply(lambda x: x.abs().mean()).reset_index(name="moyenne_abs_z"))
+
+    df_anormales = df_moy_abs[df_moy_abs["moyenne_abs_z"] >= seuil].copy()
+    df_anormales["moyenne_abs_z"] = df_anormales["moyenne_abs_z"].round(3)
+
+    return df_anormales
+
+
 # Test de fonction
 donnee = charger_effectifs()
 patho = "Diabète"
 
-print(top_departements(donnee, patho))
+print(z_score_prevalence_annee(donnee, patho))
 

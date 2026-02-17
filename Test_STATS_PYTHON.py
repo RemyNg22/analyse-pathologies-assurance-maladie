@@ -681,9 +681,219 @@ def top_departements(donnees: list[dict], pathologie: str) -> list[tuple] | None
     return nouveau_classement
 
 
+
+def z_score_prevalence(donnees: list[dict], pathologie: str) -> list[tuple] | None:
+    """
+    Calcule le z-score pour chaque département et retourne une liste triée par ordre croissant
+    (attention, c'est un z-score sur un cumul de toutes les années étudiées)
+    """
+    
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    depts_distincts = departements_distincts(donnees_patho)
+
+    moyenne_nat = moyenne_nationale(donnees, pathologie)
+
+    list_prev = []
+
+    for dept in depts_distincts:
+        sous_ensemble = filtrer_par_departement(donnees_patho, dept)
+        prev = prevalence_globale(sous_ensemble)
+
+        if prev is not None:
+            list_prev.append((dept, prev))
+
+    nb_valeurs = len(list_prev)
+
+    if nb_valeurs < 2:
+        return None
+
+    #Calcul écart-type
+    somme_ecarts_carres = sum((prev - moyenne_nat) ** 2 for dept, prev in list_prev)
+
+    ecart_type = (somme_ecarts_carres / (nb_valeurs - 1)) ** 0.5
+
+    #Calcul z-score + arrondi
+    resultats = [(dept, round((prev - moyenne_nat) / ecart_type, 3)) for dept, prev in list_prev]
+
+
+    resultats_tries = sorted(resultats, key=lambda x: x[1])
+
+    return resultats_tries
+
+
+
+def valeurs_aberrantes(donnees: list[dict], pathologie: str, seuil=2) -> list[tuple] :
+    """
+    Retourne les départements ayant une valeur aberrante, soit une valeur de z-score égale ou dépassant le seuil de 2 ou -2
+    (attention, le z-score est calculé sur un cumul de toutes les années étudiées)
+    """
+
+    liste_z_score = z_score_prevalence(donnees, pathologie)
+
+    if not liste_z_score:
+        return []
+    
+    resultats = []
+    
+    for dept, z_score in liste_z_score:
+        if z_score <= -seuil or z_score >= seuil:
+            resultats.append((dept, z_score))
+
+    return resultats
+
+
+def stats_par_departement_annee(donnees, pathologie) -> list[tuple[int, dict]]:
+    """
+    Calcule les statistiques descriptives par département et par année pour une pathologie donnée.
+    """
+
+    resultats_par_annee = {}
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    annees_differentes = sorted(annees_distinctes(donnees_patho), key=int)
+
+    codes_departements = {d["Code_departement"] for d in donnees_patho}
+
+    def cle_tri(code: str):
+        num = ""
+        lettre = ""
+        for c in code:
+            if c.isdigit():
+                num += c
+            else:
+                lettre += c
+        return (int(num), lettre)
+
+    for annee in annees_differentes:
+
+        resultats_par_dept = {}
+
+        sous_ensemble_annee = filtrer_par_annee(donnees_patho, annee)
+
+        for code in codes_departements:
+
+            sous_ensemble_dept = [d for d in sous_ensemble_annee if d["Code_departement"] == code]
+
+            if not sous_ensemble_dept:
+                continue
+
+            stats = statistiques_descriptives(sous_ensemble_dept)
+
+            resultats_par_dept[code] = {
+                "Departement": sous_ensemble_dept[0]["Departement"], **stats}
+
+        resultats_tries_dept = dict(sorted(resultats_par_dept.items(), key=lambda x: cle_tri(x[0])))
+
+        resultats_par_annee[annee] = resultats_tries_dept
+
+    return sorted(resultats_par_annee.items(), key=lambda x: int(x[0]))
+
+
+def moyenne_nationale_annee(donnees: list[dict], pathologie: str) -> dict:
+    """
+    Calcule la prévalence nationale pondérée par année (somme Ntop / somme Npop * 100).
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    annees_dist = annees_distinctes(donnees_patho)
+    
+    resultats = {}
+
+    for annee in annees_dist:
+        sous_ensemble = filtrer_par_annee(donnees_patho, annee)
+
+        total_ntop = 0
+        total_npop = 0
+        
+        for ligne in sous_ensemble:
+            total_ntop += ligne["Ntop"]
+            total_npop += ligne["Npop"]
+    
+            if total_npop == 0:
+                resultats[annee] = None
+
+        resultats[annee] = round((total_ntop / total_npop) * 100, 3)
+
+    return resultats
+
+
+
+def z_score_prevalence_annee(donnees: list[dict], pathologie: str) -> dict | None:
+    """
+    Calcule le z-score de la prévalence pour chaque département et par année.
+    Retourne un dictionnaire trié par z-score croissant.
+    """
+
+    donnees_patho = filtrer_par_pathologie(donnees, pathologie)
+    depts_distincts = departements_distincts(donnees_patho)
+
+    moyenne_nat = moyenne_nationale_annee(donnees, pathologie)
+
+    if not moyenne_nat:
+        return None
+
+    z_score_prev_annee = {}
+
+    for annee in moyenne_nat.keys():
+
+        sous_ensemble_annee = filtrer_par_annee(donnees_patho, annee)
+        list_prev = []
+
+        for dept in depts_distincts:
+            sous_ensemble_dept = filtrer_par_departement(sous_ensemble_annee, dept)
+            prev = prevalence_globale(sous_ensemble_dept)
+
+            if prev is not None:
+                list_prev.append((dept, prev))
+
+        nb_valeurs = len(list_prev)
+
+        if nb_valeurs < 2:
+            z_score_prev_annee[annee] = None
+            continue
+
+        moyenne = moyenne_nat[annee]
+
+        somme_ecarts_carres = sum((prev - moyenne) ** 2 for _, prev in list_prev)
+        ecart_type = (somme_ecarts_carres / (nb_valeurs - 1)) ** 0.5
+
+        if ecart_type == 0:
+            z_score_prev_annee[annee] = None
+            continue
+
+        resultats = [(dept, round((prev - moyenne) / ecart_type, 3)) for dept, prev in list_prev]
+
+        resultats.sort(key=lambda x: x[1])
+
+        z_score_prev_annee[annee] = resultats
+
+    return z_score_prev_annee
+
+
+
+def annees_anormales(donnees: list[dict], pathologie: str, seuil=2) -> list[dict]:
+    """
+    Retourne les années aberrantes, c'est-à-dire les années où la moyenne absolue des z-scores (ensemble des départements)
+    est supérieur ou égale à 2 par rapport à la moyenne nationale pour une pathologie.
+    """
+
+    z_score_prev = z_score_prevalence_annee(donnees, pathologie)
+    annees_aberrantes = []
+
+    for annee, dept_z_score in z_score_prev.items():
+        if not dept_z_score: 
+            continue
+
+        
+        moyenne_abs = sum(abs(z) for _, z in dept_z_score) / len(dept_z_score)
+        if moyenne_abs >= seuil:
+            annees_aberrantes.append({annee: round(moyenne_abs, 3)})
+
+    return annees_aberrantes
+
+
 #TEST DE FONCTION
 donnees = charger_echantillon(10)
 patho = pathologies_distinctes(donnees)
 
-for p in patho:
-    print(stats_par_departement(donnees, p))
+print(z_score_prevalence_annee(donnees, "Diabète"))
