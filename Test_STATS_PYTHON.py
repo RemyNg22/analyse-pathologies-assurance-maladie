@@ -892,8 +892,308 @@ def annees_anormales(donnees: list[dict], pathologie: str, seuil=2) -> list[dict
     return annees_aberrantes
 
 
-#TEST DE FONCTION
-donnees = charger_echantillon(10)
-patho = pathologies_distinctes(donnees)
 
-print(z_score_prevalence_annee(donnees, "Diabète"))
+def top_pathologies(donnees: list[dict], *, 
+                    sexe=None,
+                    age= None,
+                    departement=None,
+                    annee=None,
+                    top_n=None) -> list[tuple]:
+    """
+    Calcule le classement des pathologies selon une dimension donnée, avec possibilité de filtrer 
+    par sexe, age, département et/ou année. Possibilité de selectionner le nombre de pathologie
+    avec la prévalence la plus forte via le paramètre top_n.
+    """
+
+    filtrage = filtrer_multi_criteres(
+        donnees,
+        sexe=sexe,
+        age=age,
+        departement=departement,
+        annee=annee
+    )
+
+    agregation = {}
+
+    for ligne in filtrage:
+        patho = ligne["Pathologie"]
+
+        if patho not in agregation:
+            agregation[patho] = {"ntop": 0, "npop": 0}
+
+        agregation[patho]["ntop"] += ligne["Ntop"]
+        agregation[patho]["npop"] += ligne["Npop"]
+
+    resultats = []
+
+    for patho, valeurs in agregation.items():
+        
+        if valeurs["npop"] == 0:
+            prevalence = 0.0
+            
+        else:
+            prevalence = round((valeurs["ntop"] / valeurs["npop"]) * 100,3)
+
+        resultats.append((patho, prevalence))
+
+    resultats_tries = sorted(resultats, key=lambda x: x[1], reverse=True)
+
+    if top_n is not None:
+        return resultats_tries[:top_n]
+
+    return resultats_tries
+
+
+
+def pathologies_croissance_forte(donnees: list[dict],
+                                 annee_depart: int,
+                                 annee_arrivee: int,
+                                 sexe: str | None = None,
+                                 age: str | None = None,
+                                 departement: str | None = None,
+                                 top_n: int | None = None) -> list[tuple] | None:
+    """
+    Retourne les pathologies avec la croissance la plus forte entre une année de départ et
+    une année d'arrivée. Retourne la croissance absolue entre la prévalence annuelle de de deux années.
+    Le tri est fait par croissance décroissante.
+    """
+    filtrage = filtrer_multi_criteres(
+        donnees,
+        sexe=sexe,
+        age=age,
+        departement=departement,
+    )
+
+    if not filtrage:
+        return None
+
+    if annee_depart is None or annee_arrivee is None:
+        return None
+
+    if annee_depart > annee_arrivee:
+        return None
+
+    annee_dep = {}
+    annee_arr = {}
+
+    
+    for ligne in filtrage:
+        patho = ligne["Pathologie"]
+        annee = ligne["Annee"]
+        ntop = ligne["Ntop"]
+        npop = ligne["Npop"]
+
+        if annee == annee_depart:
+            if patho not in annee_dep:
+                annee_dep[patho] = {"ntop": 0, "npop": 0}
+                
+            annee_dep[patho]["ntop"] += ntop
+            annee_dep[patho]["npop"] += npop
+
+        elif annee == annee_arrivee:
+            if patho not in annee_arr:
+                annee_arr[patho] = {"ntop": 0, "npop": 0}
+                
+            annee_arr[patho]["ntop"] += ntop
+            annee_arr[patho]["npop"] += npop
+
+    
+    resultats = []
+
+    for patho in annee_dep:
+        if patho in annee_arr:
+
+            ntop_dep = annee_dep[patho]["ntop"]
+            npop_dep = annee_dep[patho]["npop"]
+
+            ntop_arr = annee_arr[patho]["ntop"]
+            npop_arr = annee_arr[patho]["npop"]
+
+            if npop_dep > 0 and npop_arr > 0:
+
+                prev_dep = (ntop_dep / npop_dep) * 100
+                prev_arr = (ntop_arr / npop_arr) * 100
+
+                croissance = round(prev_arr - prev_dep, 3)
+
+                resultats.append((patho, croissance))
+
+
+    resultats.sort(key=lambda x: x[1], reverse=True)
+
+
+    if top_n is not None:
+        resultats = resultats[:top_n]
+
+    return resultats
+
+
+
+def resume_global_avance(donnees: list[dict],
+                             sexe: str | None = None,
+                             age: str | None = None,
+                             departement: str | None = None,
+                             annee: int | None = None) -> dict | None:
+    """
+    Résumé analytique avancé pour un dashboard. Permet un filtrage ou non. Calcule 
+    la somme de Ntop, Npop, la prévalence globale, le nombre de pathologies, années, la pathologie n°1,
+    le département le plus touché, et plusieurs autres informations utiles. Retourne un dict avec les informations
+    pour être utilisé dans streamlit
+
+    """
+
+    # FILTRAGE
+    filtre = []
+
+    for ligne in donnees:
+        if sexe and ligne["Sexe"] != sexe:
+            continue
+        if age and ligne["Age"] != age:
+            continue
+        if departement and ligne["Departement"] != departement:
+            continue
+        if annee and ligne["Annee"] != annee:
+            continue
+        filtre.append(ligne)
+
+    if not filtre:
+        return None
+
+    # VARIABLES
+    total_ntop = 0
+    total_npop = 0
+
+    patho_dict = {}
+    dep_dict = {}
+    annee_dict = {}
+
+    annees_uniques = set()
+    pathologies_uniques = set()
+    departements_uniques = set()
+
+    # AGRÉGATION
+    for ligne in filtre:
+        patho = ligne["Pathologie"]
+        dep = ligne["Departement"]
+        an = ligne["Annee"]
+        ntop = ligne["Ntop"]
+        npop = ligne["Npop"]
+
+        total_ntop += ntop
+        total_npop += npop
+
+        annees_uniques.add(an)
+        pathologies_uniques.add(patho)
+        departements_uniques.add(dep)
+
+        # Pathologie
+        if patho not in patho_dict:
+            patho_dict[patho] = {"ntop": 0, "npop": 0}
+            
+        patho_dict[patho]["ntop"] += ntop
+        patho_dict[patho]["npop"] += npop
+
+        # Département
+        if dep not in dep_dict:
+            dep_dict[dep] = {"ntop": 0, "npop": 0}
+            
+        dep_dict[dep]["ntop"] += ntop
+        dep_dict[dep]["npop"] += npop
+
+        # Année
+        if an not in annee_dict:
+            annee_dict[an] = {"ntop": 0, "npop": 0}
+            
+        annee_dict[an]["ntop"] += ntop
+        annee_dict[an]["npop"] += npop
+
+    # PRÉVALENCE GLOBALE
+    prevalence_globale = (round((total_ntop / total_npop) * 100, 3) if total_npop != 0 else 0.0)
+
+    # PATHOLOGIE TOP
+    patho_top = None
+    patho_top_val = -1
+
+    for p, valeurs in patho_dict.items():
+        if valeurs["npop"] > 0:
+            prev = (valeurs["ntop"] / valeurs["npop"]) * 100
+            
+            if prev > patho_top_val:
+                patho_top_val = prev
+                patho_top = p
+
+    patho_top_val = round(patho_top_val, 3)
+
+    # DEPARTEMENT TOP
+    dep_top = None
+    dep_top_val = -1
+
+    for d, valeurs in dep_dict.items():
+        if valeurs["npop"] > 0:
+            prev = (valeurs["ntop"] / valeurs["npop"]) * 100
+            
+            if prev > dep_top_val:
+                dep_top_val = prev
+                dep_top = d
+
+    dep_top_val = round(dep_top_val, 3)
+
+    # ANNEE CRITIQUE
+    annee_critique = None
+    annee_critique_val = -1
+
+    # Pour calcul tendance
+    liste_prevalences = []
+
+    for a in sorted(annee_dict):
+        valeurs = annee_dict[a]
+        
+        if valeurs["npop"] > 0:
+            prev = (valeurs["ntop"] / valeurs["npop"]) * 100
+            liste_prevalences.append(prev)
+
+            if prev > annee_critique_val:
+                annee_critique_val = prev
+                annee_critique = a
+
+    annee_critique_val = round(annee_critique_val, 3)
+
+    # TENDANCE MOYENNE
+    tendance = None
+
+    if len(liste_prevalences) > 1:
+        differences = []
+        
+        for i in range(1, len(liste_prevalences)):
+            differences.append(liste_prevalences[i] - liste_prevalences[i - 1])
+            
+        tendance = round(sum(differences) / len(differences), 3)
+
+    # RESULTAT FINAL
+    return {
+        "nb_lignes": len(filtre),
+        "nb_pathologies": len(pathologies_uniques),
+        "nb_departements": len(departements_uniques),
+        "nb_annees": len(annees_uniques),
+
+        "total_cas": total_ntop,
+        "population_totale": total_npop,
+        "prevalence_globale": prevalence_globale,
+
+        "pathologie_plus_prevalente": patho_top,
+        "prevalence_pathologie_top": patho_top_val,
+
+        "departement_plus_impacte": dep_top,
+        "prevalence_departement_top": dep_top_val,
+
+        "annee_plus_critique": annee_critique,
+        "prevalence_annee_critique": annee_critique_val,
+
+        "tendance_moyenne_annuelle": tendance
+    }
+
+
+#TEST DE FONCTION
+donnees = charger_echantillon(60)
+
+print(resume_global_avance(donnees))

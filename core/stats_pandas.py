@@ -832,3 +832,183 @@ def annees_anormales(df: pd.DataFrame, pathologie: str, seuil=2) -> pd.DataFrame
     df_anormales["moyenne_abs_z"] = df_anormales["moyenne_abs_z"].round(3)
 
     return df_anormales
+
+
+
+def top_pathologies(df: pd.DataFrame, 
+                sexe: str | None = None,
+                age: str | None = None,
+                departement: str | None = None,
+                annee: int | None = None,
+                top_n: int | None = None
+                ) -> pd.DataFrame | None:
+    """
+    Calcule le classement des pathologies selon une dimension donnée, avec possibilité de filtrer 
+    par sexe, age, département et/ou année. Possibilité de selectionner le nombre de pathologie
+    avec la prévalence la plus forte via le paramètre top_n.
+    """
+
+    df_filtre = df.copy()
+
+    if sexe is not None:
+        df_filtre = df_filtre[df_filtre["libelle_sexe"] == sexe]
+    if age is not None:
+        df_filtre = df_filtre[df_filtre["libelle_classe_age"] == age]
+    if departement is not None:
+        df_filtre = df_filtre[df_filtre["departement"] == departement]
+    if annee is not None:
+        df_filtre = df_filtre[df_filtre["annee"] == annee]
+
+
+    if df_filtre.empty:
+        return None
+        
+    df_filtre = df_filtre.groupby("pathologie", as_index=False).agg(total_ntop=("Ntop", "sum"), total_npop=("Npop", "sum"))
+    df_filtre["prevalence_globale"] = ((df_filtre["total_ntop"] / df_filtre["total_npop"]).fillna(0).mul(100).round(3))
+    df_filtre = df_filtre.drop(columns=["total_ntop", "total_npop"])
+    df_filtre = (df_filtre.sort_values("prevalence_globale", ascending=False).reset_index(drop=True))
+    df_filtre.index = df_filtre.index +1
+
+    if top_n is not None:
+        return df_filtre.head(top_n)
+
+    return df_filtre
+
+
+def pathologies_croissance_forte(df: pd.DataFrame,
+                                 annee_depart: int,
+                                 annee_arrivee: int,
+                                 sexe: str | None = None,
+                                 age: str | None = None,
+                                 departement: str | None = None,
+                                 top_n: int | None = None) -> pd.DataFrame | None:
+    """
+    Retourne les pathologies avec la croissance la plus forte entre une année de départ et
+    une année d'arrivée. Retourne la croissance absolue entre la prévalence annuelle de de deux années.
+    Le tri est fait par croissance décroissante.
+    """
+
+    df_filtre = df.copy()
+
+    if sexe is not None:
+        df_filtre = df_filtre[df_filtre["libelle_sexe"] == sexe]
+    if age is not None:
+        df_filtre = df_filtre[df_filtre["libelle_classe_age"] == age]
+    if departement is not None:
+        df_filtre = df_filtre[df_filtre["departement"] == departement]
+
+    if df_filtre.empty:
+        return None
+
+    if annee_depart is None or annee_arrivee is None:
+        return None
+
+    if annee_depart > annee_arrivee:
+        return None
+
+    df_filtre = df_filtre.groupby(["pathologie", "annee"], as_index=False).agg(total_ntop=("Ntop", "sum"), total_npop=("Npop", "sum"))
+    df_filtre["prevalence_globale_annuelle"] = ((df_filtre["total_ntop"] / df_filtre["total_npop"]).fillna(0).mul(100).round(3))
+    df_filtre = df_filtre.drop(columns=["total_ntop", "total_npop"])
+
+    df_filtre = df_filtre.loc[(df_filtre["annee"] == annee_depart) | (df_filtre["annee"] == annee_arrivee)]
+    df_croissance = (df_filtre.pivot(index="pathologie", columns="annee", values="prevalence_globale_annuelle").dropna())
+
+    df_croissance.columns.name = None
+    
+    df_croissance["croissance"] = (df_croissance[annee_arrivee] - df_croissance[annee_depart])
+
+    df_croissance = df_croissance.sort_values("croissance", ascending=False).reset_index()
+    df_croissance.index = df_croissance.index + 1
+
+    if top_n is not None:
+        df_croissance = df_croissance.head(top_n)
+
+    return df_croissance
+
+
+
+def resume_global_avance(df,
+                         sexe: str | None = None,
+                         age: str | None = None,
+                         departement: str | None = None,
+                         annee: int | None = None) -> dict | None:
+    """
+    Résumé analytique avancé pour un dashboard. Permet un filtrage ou non. Calcule 
+    la somme de Ntop, Npop, la prévalence globale, le nombre de pathologies, années, la pathologie n°1,
+    le département le plus touché, et plusieurs autres informations utiles. Retourne un dict avec les informations
+    pour être utilisé dans streamlit
+    """
+
+    df_filtre = df.copy()
+
+    # FILTRAGE
+    if sexe:
+        df_filtre = df_filtre[df_filtre["libelle_sexe"] == sexe]
+    if age:
+        df_filtre = df_filtre[df_filtre["libelle_classe_age"] == age]
+    if departement:
+        df_filtre = df_filtre[df_filtre["departement"] == departement]
+    if annee:
+        df_filtre = df_filtre[df_filtre["annee"] == annee]
+
+    if df_filtre.empty:
+        return None
+
+    # VOLUMES
+    total_ntop = df_filtre["Ntop"].sum()
+    total_npop = df_filtre["Npop"].sum()
+
+    prevalence_globale = (round((total_ntop / total_npop) * 100, 3) if total_npop != 0 else 0.0)
+
+    # PATHOLOGIE LA PLUS PREVALENTE
+    patho_group = (df_filtre.groupby("pathologie")[["Ntop", "Npop"]].sum())
+
+    patho_group["prevalence"] = (patho_group["Ntop"] / patho_group["Npop"] * 100)
+
+    patho_top = patho_group["prevalence"].idxmax()
+    patho_top_val = round(patho_group["prevalence"].max(), 3)
+
+    # DEPARTEMENT LE PLUS IMPACTE
+    dep_group = (df_filtre.groupby("departement")[["Ntop", "Npop"]].sum())
+
+    dep_group["prevalence"] = (dep_group["Ntop"] / dep_group["Npop"] * 100)
+
+    dep_top = dep_group["prevalence"].idxmax()
+    dep_top_val = round(dep_group["prevalence"].max(), 3)
+
+    # ANNEE LA PLUS CRITIQUE
+    annee_group = (df_filtre.groupby("annee")[["Ntop", "Npop"]].sum())
+
+    annee_group["prevalence"] = (annee_group["Ntop"] / annee_group["Npop"] * 100)
+
+    annee_critique = annee_group["prevalence"].idxmax()
+    annee_critique_val = round(annee_group["prevalence"].max(), 3)
+
+    # TENDANCE MOYENNE
+    tendance = None
+    if len(annee_group) > 1:
+        tendance = round(annee_group["prevalence"].diff().mean(), 3)
+
+    return {
+        # Volume
+        "nb_lignes": len(df_filtre),
+        "nb_pathologies": df_filtre["pathologie"].nunique(),
+        "nb_departements": df_filtre["departement"].nunique(),
+        "nb_annees": df_filtre["annee"].nunique(),
+
+        # Masse
+        "total_cas": int(total_ntop),
+        "population_totale": int(total_npop),
+        "prevalence_globale": prevalence_globale,
+
+        # Leaders
+        "pathologie_plus_prevalente": patho_top,
+        "prevalence_pathologie_top": patho_top_val,
+        "departement_plus_impacte": dep_top,
+        "prevalence_departement_top": dep_top_val,
+        "annee_plus_critique": int(annee_critique),
+        "prevalence_annee_critique": annee_critique_val,
+
+        # Dynamique
+        "tendance_moyenne_annuelle": tendance
+    }
