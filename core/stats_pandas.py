@@ -7,9 +7,10 @@ def charger_effectifs() -> pd.DataFrame:
     Charge le fichier effectifs.parquet situé dans le dossier data/ qui est une conversion en parquet du fichier effectif.csv
     disponible sur data.gouv, puis filtre et nettoie les données avec la bibliothèque pandas
     """
-    parquet_path = (
-        Path(__file__).resolve().parent.parent/ "data"/ "effectifs.parquet"
-    )
+    parquet_path = Path("data/effectifs.parquet")
+    if not parquet_path.exists():
+        raise FileNotFoundError(f"{parquet_path} non trouvé !")
+    
     #Initialisation des en-têtes pour le tableau
     colonnes_entete = ['annee', 
                        'patho_niv1',
