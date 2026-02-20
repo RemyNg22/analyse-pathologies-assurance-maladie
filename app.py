@@ -27,8 +27,8 @@ def load_data():
 
 df = load_data()
 
-st.write("Colonnes disponibles :", df.columns.tolist())
-st.write("Aperçu du DataFrame :", df.head())
+df.columns = df.columns.str.strip().str.lower()
+df.rename(columns={"ntop": "cas", "npop": "population"}, inplace=True)
 
 # Sidebar : sélection de la page
 st.sidebar.title("Navigation")
