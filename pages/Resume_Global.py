@@ -14,8 +14,8 @@ def resume_global(df: pd.DataFrame) -> dict:
         "Nombre de pathologies distinctes": pathologies_distinctes(df),
         "Nombre de départements distincts": departements_distincts(df),
         "Nombre d'années distinctes": annees_distinctes(df),
-        "Nombre total de cas": nombre_de_cas(df),
-        "Population totale": population_reference(df),
+        "Nombre total de cas": int(nombre_de_cas(df)),
+        "Population totale": int(population_reference(df)),
         "Prévalence globale (%)": prevalence_globale(df),
         "Prévalence moyenne (%)": prevalence_moyenne(df)
     }

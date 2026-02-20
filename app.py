@@ -6,7 +6,6 @@ from pages.Analyse_territoriale import analyse_territoriale
 from pages.Analyse_temporelle import analyse_temporelle
 from pages.Anomalies import anomalies
 
-st.write("App démarre correctement !")
 
 st.set_page_config(page_title="Dashboard Pathologies", layout="wide")
 
@@ -31,10 +30,7 @@ page = st.sidebar.selectbox(
 
 # Sidebar : sélection pathologie
 if page != "Résumé global":
-    pathologie = st.sidebar.selectbox(
-        "Choisir une pathologie",
-        sorted(df["pathologie"].unique())
-    )
+    pathologie = st.sidebar.selectbox("Choisir une pathologie", sorted(df["pathologie"].unique()))
 
 
 # Navigation
