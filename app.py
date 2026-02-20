@@ -27,16 +27,15 @@ page = st.sidebar.selectbox(
     ]
 )
 
-# Sidebar : sélection pathologie si nécessaire
+# Sidebar : sélection pathologie
 if page != "Résumé global":
     pathologie = st.sidebar.selectbox(
         "Choisir une pathologie",
         sorted(df["pathologie"].unique())
     )
 
-# -------------------------
+
 # Navigation
-# -------------------------
 if page == "Résumé global":
     st.header("Résumé global")
     global_stats = resume_global(df)

@@ -1,4 +1,4 @@
 pandas
 pyarrow
 streamlit
-plotly
+altair==4.2.2
