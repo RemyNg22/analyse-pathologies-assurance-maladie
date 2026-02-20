@@ -146,7 +146,7 @@ def nombre_de_cas(df: pd.DataFrame) -> int:
     :param df: DataFrame Pandas
     :return: nombre total de cas
     """
-    return df["Ntop"].sum()
+    return int(df["Ntop"].sum())
 
 
 def population_reference(df: pd.DataFrame) -> int:
@@ -156,7 +156,7 @@ def population_reference(df: pd.DataFrame) -> int:
     :param df: DataFrame Pandas
     :return: population totale
     """
-    return df["Npop"].sum()
+    return int(df["Npop"].sum())
 
 
 def prevalence_globale(df: pd.DataFrame) -> float:
