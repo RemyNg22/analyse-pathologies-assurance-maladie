@@ -1,6 +1,6 @@
 import streamlit as st
 from core.stats_pandas import charger_effectifs
-from pages.Resume_Global import resume_global
+from pages.Resume_Global import resume_global, page_resume_global
 from pages.Analyse_Pathologies import analyse_pathologie
 from pages.Analyse_territoriale import analyse_territoriale
 from pages.Analyse_temporelle import analyse_temporelle
@@ -14,6 +14,7 @@ Rôle :
 - Gérer la navigation entre les pages
 - Centraliser les sélections utilisateur (sidebar)
 - Appeler les fonctions d'analyse
+(Veuillez utiliser le menu déroulant et non les pages de la barre latérale)
 """
 
 
@@ -51,6 +52,7 @@ st.sidebar.caption("Dashboard d'analyse des pathologies")
 # Navigation
 if page == "Résumé global":
     resume_global(df)
+    page_resume_global(df)
 
 elif page == "Analyse par pathologie":
     analyse_pathologie(df, pathologie)

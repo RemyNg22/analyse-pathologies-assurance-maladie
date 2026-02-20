@@ -73,7 +73,7 @@ def page_resume_global(df: pd.DataFrame):
 
     st.subheader("Évolution globale des cas")
 
-    cas_par_annee = df.groupby("annee")["cas"].sum().sort_index()
+    cas_par_annee = df.groupby("annee")["Ntop"].sum().sort_index()
 
     fig, ax = plt.subplots()
     ax.plot(cas_par_annee.index, cas_par_annee.values)
@@ -88,7 +88,7 @@ def page_resume_global(df: pd.DataFrame):
     st.markdown(
         """
         Ce graphique permet d'identifier :
-        - une tendance (hausse ou baisse),
+        - une tendance (hausse),
         - des ruptures éventuelles,
         - des années atypiques.
         
@@ -103,7 +103,7 @@ def page_resume_global(df: pd.DataFrame):
 
     st.subheader("Top 10 des pathologies (cas cumulés)")
 
-    top_pathologies = (df.groupby("pathologie")["cas"].sum().nlargest(10).sort_values())
+    top_pathologies = (df.groupby("pathologie")["Ntop"].sum().nlargest(10).sort_values())
 
     fig2, ax2 = plt.subplots()
     ax2.barh(top_pathologies.index, top_pathologies.values)
@@ -127,7 +127,7 @@ def page_resume_global(df: pd.DataFrame):
 
     st.subheader("Répartition globale des cas par département")
 
-    cas_par_departement = (df.groupby("departement")["cas"].sum().sort_values(ascending=False).head(10))
+    cas_par_departement = (df.groupby("departement")["Ntop"].sum().sort_values(ascending=False).head(10))
 
     fig3, ax3 = plt.subplots()
     ax3.bar(cas_par_departement.index.astype(str), cas_par_departement.values)
