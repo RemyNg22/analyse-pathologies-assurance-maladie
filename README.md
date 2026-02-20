@@ -74,28 +74,34 @@ Analyse_pathologie/
 ```text
 Analyse_pathologie/
 │
-├── core/
-│   ├── stats_python.py         # Statistiques en Python pur
-│   └── stats_pandas.py         # Statistiques avec Pandas
+├─ data/                  # Parquet compressé ou échantillon
+│   └─ effectifs.parquet
+│
+├─ notebooks/             # Demo analyse CSV / Pandas
+│   ├─ demo_pandas.ipynb
+│   └─ demo_pure_python.ipynb
+│
+├─ core/               # Fonctions réutilisables
+│   ├─ stats_pandas.py
+│   ├─ loader_csv.py
+│   └─ stats_python.py
+│
+├─ app.py          # Streamlit
+│
+├── pages/
+│   ├── __init__.py
+│   └── Resume_Global.py
+│   └── Analyse_Pathologies.py
+│   └── Analyse_territoriale.py
+│   └── Analyse_temporelle.py
+│   └── Anomalies.py
 │
 ├── utils/
-│   └── conversion.py           # Fonctions de conversion (départements, etc.)
+│   ├── __init__.py
+│   └── conversion.py          # Départements, sexe, âges…
 │
-├── data/
-│   └── effectifs.parquet       # Données au format Parquet
-│
-├── notebooks/
-│   ├── demo_pandas.ipynb       # Notebook de démonstration Pandas (à faire)
-│   └── demo_pure_python.ipynb  # Notebook de démonstration Python pur (à faire)
-│
-├── Test_LOADER_CSV.py          # Tests sur échantillon (à supprimer plus tard)
-├── Test_STATS_PYTHON.py        # Tests sur échantillon (à supprimer plus tard)
-├── Test_STATS_PANDAS.py        # Tests sur échantillon (à supprimer plus tard)
-│
-├── app.py                      # Application Streamlit (à faire)
-│
-├── requirements.txt
-└── README.md
+├─ requirements.txt
+└─ README.md
 ```
 
 
