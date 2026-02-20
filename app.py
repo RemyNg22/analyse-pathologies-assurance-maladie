@@ -23,7 +23,16 @@ st.set_page_config(page_title="Dashboard Pathologies", layout="wide")
 # Chargement des données
 @st.cache_data
 def load_data():
-    return charger_effectifs()
+    df = charger_effectifs()
+
+    df.columns = df.columns.str.strip().str.lower()
+    df.rename(columns={
+        "ntop": "cas",
+        "npop": "population",
+        "dept": "departement"
+    }, inplace=True)
+
+    return df
 
 df = load_data()
 
