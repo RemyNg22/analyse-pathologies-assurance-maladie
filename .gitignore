@@ -10,3 +10,8 @@ architecture.txt
 
 # Fichier de données (850Mo)
 data/*.csv
+
+# Fichier test
+Test_LOADER_CSV.py
+Test_STATS_PANDAS.py
+Test_STATS_PYTHON.py
