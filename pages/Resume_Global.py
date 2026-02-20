@@ -69,8 +69,6 @@ def page_resume_global(df: pd.DataFrame):
 
     st.divider()
 
-    st.write(df.columns.tolist())
-
 
     st.subheader("Évolution globale des cas")
 

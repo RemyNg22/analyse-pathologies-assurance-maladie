@@ -11,10 +11,10 @@ Application principale du dashboard d'analyse des pathologies.
 
 Rôle :
 - Charger les données
-- Gérer la navigation entre les pages
+- Gérer la navigation entre les pages (Veuillez utiliser le menu déroulant et non les pages de la barre latérale)
 - Centraliser les sélections utilisateur (sidebar)
 - Appeler les fonctions d'analyse
-(Veuillez utiliser le menu déroulant et non les pages de la barre latérale)
+
 """
 
 
@@ -26,6 +26,9 @@ def load_data():
     return charger_effectifs()
 
 df = load_data()
+
+st.write("Colonnes disponibles :", df.columns.tolist())
+st.write("Aperçu du DataFrame :", df.head())
 
 # Sidebar : sélection de la page
 st.sidebar.title("Navigation")
