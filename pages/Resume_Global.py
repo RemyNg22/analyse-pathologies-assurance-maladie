@@ -1,7 +1,7 @@
-# 1_Resume_Global.py
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from core.stats_pandas import (
     nombre_de_lignes, pathologies_distinctes, departements_distincts, annees_distinctes,
     nombre_de_cas, population_reference, prevalence_globale, prevalence_moyenne
@@ -41,12 +41,20 @@ def page_resume_global(df: pd.DataFrame):
     st.markdown(
         """
         Ces indicateurs décrivent les données suivantes :
-        - le volume total d'observations,
+        - le volume total de lignes observées,
         - la diversité des pathologies étudiées,
         - la couverture territoriale,
         - et la profondeur temporelle.
         """
     )
+
+    st.markdown(
+    """
+    Les lignes correspondent au jeu de données filtré :
+    les agrégats nationaux ("Toute la France"), les modalités globales ("tous sexes") 
+    et les lignes avec des données manquantes ont été exclus afin d’éviter les doubles 
+    comptages ou données qui fausseraient les statistiques.
+    """)
 
     st.divider()
 
@@ -67,6 +75,14 @@ def page_resume_global(df: pd.DataFrame):
         """
     )
 
+    st.markdown(
+        """
+        Les cas totaux correspondent à l’ensemble des cas recensés sur la période
+        de 9 ans. Un même patient peut apparaître plusieurs fois s’il est concerné
+        par plusieurs pathologies ou plusieurs prises en charge.
+        """
+    )
+
     st.divider()
 
 
@@ -79,6 +95,8 @@ def page_resume_global(df: pd.DataFrame):
     ax.set_xlabel("Année")
     ax.set_ylabel("Nombre total de cas")
     ax.set_title("Nombre total de cas par année")
+    ax.ticklabel_format(style='plain', axis='y')
+    ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))    
     ax.grid(True)
 
     st.pyplot(fig)
@@ -100,24 +118,35 @@ def page_resume_global(df: pd.DataFrame):
     st.divider()
 
 
-    st.subheader("Top 10 des pathologies (cas cumulés)")
+    st.subheader("Top 20 des pathologies et traitements pris en charge (cas cumulés)")
 
-    top_pathologies = (df.groupby("pathologie")["Ntop"].sum().nlargest(10).sort_values())
-
+    top_pathologies = (df.groupby("pathologie")["Ntop"].sum().sort_values(ascending=False))
+    top_pathologies = top_pathologies.iloc[2:22]
+    top_pathologies = top_pathologies.sort_values(ascending=False)
     fig2, ax2 = plt.subplots()
     ax2.barh(top_pathologies.index, top_pathologies.values)
     ax2.set_xlabel("Nombre total de cas")
-    ax2.set_title("Pathologies les plus représentées")
-
+    ax2.set_title("Pathologies/traitements les plus représentées")
     st.pyplot(fig2)
 
     st.markdown(
         """
+        Cette visualisation met en évidence les pathologies/traitements concentrant
+        le plus grand volume de cas sur la période étudiée.
+
         Cette visualisation met en évidence les pathologies concentrant
         le plus grand volume de cas sur la période étudiée.
-        
+
         Une forte concentration sur quelques pathologies peut orienter
         les priorités d'analyse pour les pages suivantes.
+        
+        **Note :** les deux première lignes (non affichées ici) correspondent à des hospitalisations ou prises en charge
+        sans pathologie spécifique identifiée (traitements, maternité, antalgique/anti-inflammatoire). 
+        Ces cas ne reflètent pas de pathologie particulière et ont été exclus du graphique.
+        Les deux premières lignes masquées sont les suivantes :
+
+        - **Pas de pathologie repérée, traitement, maternité, hospitalisation ou traitement antalgique ou anti-inflammatoire** : 1.293.429.190 cas,
+        - **Hospitalisations hors pathologies repérées (avec ou sans pathologies, traitements ou maternité)** : 347.187.090 cas
         """
     )
 
@@ -128,12 +157,14 @@ def page_resume_global(df: pd.DataFrame):
 
     cas_par_departement = (df.groupby("departement")["Ntop"].sum().sort_values(ascending=False).head(10))
 
-    fig3, ax3 = plt.subplots()
+    fig3, ax3 = plt.subplots(figsize=(6, 4), dpi=120)
     ax3.bar(cas_par_departement.index.astype(str), cas_par_departement.values)
     ax3.set_xlabel("Département")
     ax3.set_ylabel("Nombre total de cas")
     ax3.set_title("Top 10 départements en volume de cas")
     ax3.tick_params(axis='x', rotation=45)
+    ax3.ticklabel_format(style='plain', axis='y')
+    ax3.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))    
 
     st.pyplot(fig3)
 

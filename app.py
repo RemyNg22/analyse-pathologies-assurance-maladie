@@ -7,18 +7,18 @@ from pages.Analyse_temporelle import analyse_temporelle
 from pages.Anomalies import anomalies
 
 """
-Application principale du dashboard d'analyse des pathologies.
+Application principale du dashboard d'analyse des pathologies/traitements pris en charge.
 
 Rôle :
 - Charger les données
 - Gérer la navigation entre les pages (Veuillez utiliser le menu déroulant et non les pages de la barre latérale)
 - Centraliser les sélections utilisateur (sidebar)
-- Appeler les fonctions d'analyse
+- Appeler les fonctions d'analyse (script d'analyse stats_pandas.py)
 
 """
 
 
-st.set_page_config(page_title="Dashboard Pathologies", layout="wide")
+st.set_page_config(page_title="Dashboard Pathologies/Traitements", layout="wide")
 
 # Chargement des données
 @st.cache_data
@@ -43,7 +43,7 @@ page = st.sidebar.selectbox(
 # Sidebar : sélection pathologie
 pathologie = None
 if page != "Résumé global":
-    pathologie = st.sidebar.selectbox("Choisir une pathologie", sorted(df["pathologie"].unique()))
+    pathologie = st.sidebar.selectbox("Choisir une pathologie/traitements", sorted(df["pathologie"].unique()))
 
 st.sidebar.divider()
 st.sidebar.caption("Dashboard d'analyse des pathologies")
