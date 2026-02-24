@@ -7,7 +7,13 @@ Le projet est volontairement construit en **deux approches** :
 - une approche avec **pandas** (DataFrame, parquet)
 
 Le projet est **en cours de développement**.  
-Certaines fonctionnalités et visualisations sont prévues mais pas encore implémentées.
+Il est composé comme suit :
+- **une app streamlit** pour montrer visuellement les statistiques, le lien est le suivant :
+[text](https://analyse-pathologies-assurance-maladie.streamlit.app/)
+- un notebook de l'approche en **Python pur**,
+- un notebook de l'approche avec **Pandas**
+- le code complet visible sur GitHub :
+[text](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie)
 
 ---
 
@@ -132,4 +138,4 @@ python Test_STATS_PANDAS.py
 ou
 
 python -m core.stats_pandas #depuis racine du projet
-```|
+```
