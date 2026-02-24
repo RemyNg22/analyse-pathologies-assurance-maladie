@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from core.stats_pandas import (stats_patho, stats_par_sexe, stats_par_tranche_age, age_central_pathologie,
                                ratio_cas_hf, difference_prevalence_sexe, prevalence_globale)
+from utils.conversion import Conversion_donnees
 
 def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
@@ -76,6 +77,9 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     st.pyplot(fig2)
 
+    st.write("")
+    st.write("")
+
     st.markdown("### **Dispersion des prévalences : hommes**")
 
     col8, col9, col10, col11 = st.columns(4)
@@ -102,8 +106,11 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     st.write("")
 
     st.markdown("### **Répartition des cas par tranche d'âge et par sexe**")
-    pivot = (df[(df["pathologie"] == pathologie) & (df["libelle_classe_age"] != "tous âges") & (df["libelle_sexe"] != "tous sexes")]
-        .groupby(["libelle_classe_age", "libelle_sexe"])["Ntop"].sum().unstack())
+    df_filtered = df[(df["pathologie"] == pathologie) & (df["libelle_classe_age"] != "tous âges") & (df["libelle_sexe"] != "tous sexes")]
+
+    df_filtered["libelle_classe_age"] = pd.Categorical(df_filtered["libelle_classe_age"], categories=Conversion_donnees.ORDRE_TRANCHES_AGE, ordered=True)
+
+    pivot = df_filtered.groupby(["libelle_classe_age", "libelle_sexe"])["Ntop"].sum().unstack()
 
     pivot.plot(kind="barh")
     st.pyplot(plt.gcf())
@@ -127,7 +134,7 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     st.write("")
     st.write("")
-    
+
     st.markdown("### **Tableau des prévalences et parts par tranche d'âge**")
     total_age = stats_age["Ntop_totale"].sum()
     stats_age["%"] = (stats_age["Ntop_totale"] / total_age * 100).round(3)
@@ -152,15 +159,17 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     La tranche d’âge {age_label} présente la prévalence la plus élevée :  
     cela signifie que le **risque** d’être concerné par la pathologie 
-    est maximal dans cette classe d’âge.
+    est maximal dans cette classe d’âge.""")
 
-    En revanche, la tranche {part_la_plus_elevee} représente la part (%) la plus importante 
-    du total des cas observés.  
+    if age_label != part_la_plus_elevee:
+        st.markdown(f"""
+        En revanche, la tranche {part_la_plus_elevee} représente la part (%) la plus importante 
+        du total des cas observés.  
 
-    Cette différence s’explique par la structure démographique :
+        Cette différence s’explique par la structure démographique :
 
-    - La prévalence mesure un **taux (cas / population)**.
-    - La part (%) mesure un **poids dans le volume total des cas**.
-    - Une tranche d’âge plus nombreuse peut concentrer davantage de cas 
-    même si son taux est légèrement inférieur.
-    """)
+        - La prévalence mesure un **taux (cas / population)**.
+        - La part (%) mesure un **poids dans le volume total des cas**.
+        - Une tranche d’âge plus nombreuse peut concentrer davantage de cas 
+        même si son taux est légèrement inférieur.
+        """)

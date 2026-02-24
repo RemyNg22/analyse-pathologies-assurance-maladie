@@ -9,11 +9,11 @@ Le projet est volontairement construit en **deux approches** :
 Le projet est **en cours de développement**.  
 Il est composé comme suit :
 - **une app streamlit** pour montrer visuellement les statistiques, le lien est le suivant :
-[text](https://analyse-pathologies-assurance-maladie.streamlit.app/)
+[https://analyse-pathologies-assurance-maladie.streamlit.app/](https://analyse-pathologies-assurance-maladie.streamlit.app/)
 - un notebook de l'approche en **Python pur**,
 - un notebook de l'approche avec **Pandas**
 - le code complet visible sur GitHub :
-[text](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie)
+[https://github.com/RemyNg22/analyse-pathologies-assurance-maladie](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie)
 
 ---
 
@@ -71,6 +71,7 @@ Conformément à la loi du 7 juin 1951 :
 - pandas
 - numpy (si utilisé)
 - streamlit (pour l’interface future)
+- matplotlib
 
 
 ## Structure du projet
