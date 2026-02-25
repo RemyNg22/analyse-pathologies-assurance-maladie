@@ -72,6 +72,7 @@ Conformément à la loi du 7 juin 1951 :
 - numpy (si utilisé)
 - streamlit (pour l’interface future)
 - matplotlib
+- plotly
 
 
 ## Structure du projet
@@ -81,9 +82,9 @@ Analyse_pathologie/
 ```text
 Analyse_pathologie/
 │
-├─ data/                  # Parquet compressé ou échantillon
+├─ data/                  # Parquet compressé ou échantillon + carte geojson
 │   └─ effectifs.parquet
-│
+│   └─ departements.geojson
 ├─ notebooks/             # Demo analyse CSV / Pandas
 │   ├─ demo_pandas.ipynb
 │   └─ demo_pure_python.ipynb

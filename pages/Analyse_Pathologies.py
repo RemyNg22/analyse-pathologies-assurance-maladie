@@ -1,4 +1,3 @@
-# 2_Analyse_Pathologies.py
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -9,7 +8,7 @@ from utils.conversion import Conversion_donnees
 
 def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
-    st.title("Analyse d'une pathologie/traitements")
+    st.title("Analyse d'une pathologie/traitement")
     st.caption(f"Analyse démographique du traitement ou de la pathologie suivant(e) : {pathologie}")
 
     df_patho = df[df["pathologie"] == pathologie]
@@ -69,11 +68,30 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     st.write("")
     st.write("")
 
+    labels = stats_sexe.index
+    sizes = stats_sexe["prevalence_globale"]
+
+    def autopct_remplissage(values):
+        def inter_autopct(pct):
+            total = sum(values)
+            val = pct * total / 100
+            return f"{pct:.1f}%\n({val:.2f}%)"
+        return inter_autopct
+
     fig2, ax2 = plt.subplots()
-    ax2.bar(stats_sexe.index, stats_sexe["prevalence_globale"])
-    ax2.set_xlabel("Sexe")
-    ax2.set_ylabel("Prévalence (%)")
+    wedges, texts, autotexts = ax2.pie(
+        sizes,
+        labels=labels,
+        autopct=autopct_remplissage(sizes),
+        startangle=90,
+        colors=["#1d45b3", "#f82408"],
+        textprops=dict(color="w")
+    )
+
     ax2.set_title("Prévalence globale par sexe")
+
+    # Ajouter une légende séparée
+    ax2.legend(wedges, labels, title="Sexe", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
 
     st.pyplot(fig2)
 
