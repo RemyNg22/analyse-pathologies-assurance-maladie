@@ -171,7 +171,8 @@ def page_resume_global(df: pd.DataFrame):
     st.markdown(
         """
         Cette analyse brute en volume doit être interprétée avec prudence.
-        Les départements les plus peuplés apparaissent en tête.
+        Les départements avec le plus de pathologies et traitements pris en charge 
+        au cours des 9 dernières années apparaissent en tête.
         
         L'analyse territoriale détaillée permettra d'examiner les prévalences
         afin d'ajuster pour l'effet population.

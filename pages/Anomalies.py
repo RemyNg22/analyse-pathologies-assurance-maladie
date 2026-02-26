@@ -1,4 +1,3 @@
-# 5_Anomalies.py
 import pandas as pd
 from core.stats_pandas import valeurs_aberrantes, annees_anormales
 

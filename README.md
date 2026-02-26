@@ -19,7 +19,7 @@ Il est composé comme suit :
 
 ## Jeu de données
 
-**Source** : data.gouv.fr – Cartographie des pathologies et des dépenses de l’Assurance Maladie.
+**Source** : data.gouv.fr – [https://www.data.gouv.fr/datasets/pathologies-effectif-de-patients-par-pathologie-sexe-classe-dage-et-territoire-departement-region](Cartographie des pathologies et des dépenses de l’Assurance Maladie).
 
 Les données décrivent les effectifs de patients pris en charge par l’ensemble des régimes d’assurance maladie, selon :
 - la pathologie, le traitement chronique ou l’épisode de soins
@@ -73,6 +73,7 @@ Conformément à la loi du 7 juin 1951 :
 - streamlit (pour l’interface future)
 - matplotlib
 - plotly
+- seaborn
 
 
 ## Structure du projet
@@ -131,13 +132,3 @@ La version pandas :
 - lit les données depuis `data/effectifs.parquet`
 - est plus rapide
 - est plus adaptée aux analyses statistiques et futures visualisations
-
-### Exemple de lancement
-
-```bash
-python Test_STATS_PANDAS.py
-
-ou
-
-python -m core.stats_pandas #depuis racine du projet
-```
