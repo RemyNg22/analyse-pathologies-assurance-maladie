@@ -66,7 +66,7 @@ def analyse_territoriale(df: pd.DataFrame, pathologie: str):
 
     #Carte Prévalence par département
 
-    st.subheader("Carte de prévalence par département")
+    st.subheader("Carte de prévalence par département (hors DOM-TOM)")
 
 
     stats_carte = stats_dept.reset_index()
