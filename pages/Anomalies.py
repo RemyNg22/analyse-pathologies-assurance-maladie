@@ -130,8 +130,17 @@ def anomalies(df: pd.DataFrame, pathologie: str):
         origin="lower",
         title="Heatmap des z-scores par année")
 
-    fig3.update_layout(height=800)
+    fig3.update_layout(height=1200)
+    n_annees = len(pivot.columns)
+    for i in range(n_annees - 1):
+        fig3.add_shape(type="line",
+            x0=i + 0.5, x1=i + 0.5,
+            y0=-0.5, y1=len(pivot.index) - 0.5,
+            line=dict(color="black", width=1),
+            layer="above")
     st.plotly_chart(fig3, use_container_width=True)
+
+
 
     st.markdown(
             """

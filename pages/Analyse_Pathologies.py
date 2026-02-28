@@ -25,6 +25,16 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     col2.metric("Population totale", f"{int(stats_globales['Npop_totale']):,}")
     col3.metric("Prévalence globale (%)", f"{prevalence_globale(df_patho):.2f}")
 
+    st.markdown("""
+    Cette section présente les indicateurs agrégés pour la pathologie sélectionnée.
+
+    - **Cas totaux** : nombre total de patients pris en charge sur les 9 dernières années.
+    - **Population totale** : population exposée au risque.
+    - **Prévalence globale** : proportion de patients concernés dans la population totale.
+
+    La prévalence permet d’évaluer le poids relatif de la pathologie indépendamment de la taille démographique.
+    """)
+
     st.divider()
 
 
@@ -51,7 +61,7 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
         col7.metric("Prévalence Femmes (%)", stats_sexe.loc["femmes", "prevalence_globale"])
 
     st.markdown("### **Répartition des cas et de la prévalence par sexe**")
-    st.markdown("Les deux graphiques ci-dessous présentent :\n"
+    st.markdown("Le graphique ci-dessous présente :\n"
         "- le nombre total de cas par sexe\n"
         "- la prévalence globale par sexe"
     )
@@ -67,6 +77,10 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     st.write("")
     st.write("")
+    st.markdown("Le prochain présente :\n"
+    "- la part entre hommes et femmes pour le traitement/pathologie concerné\n"
+    "- la prévalence globale par sexe"
+)
 
     labels = stats_sexe.index
     sizes = stats_sexe["prevalence_globale"]
@@ -90,13 +104,24 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     ax2.set_title("Prévalence globale par sexe")
 
-    # Ajouter une légende séparée
+
     ax2.legend(wedges, labels, title="Sexe", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
 
     st.pyplot(fig2)
 
     st.write("")
     st.write("")
+
+    st.markdown("""
+    L’analyse par sexe permet d’identifier d’éventuelles disparités épidémiologiques.
+
+    Deux dimensions sont étudiées :
+    - Le volume de cas.
+    - Le taux de prévalence.
+
+    Une différence de volume ne signifie pas nécessairement une différence de risque.
+    La prévalence permet une comparaison à structure démographique équivalente.
+    """)
 
     st.markdown("### **Dispersion des prévalences : hommes**")
 
@@ -122,6 +147,17 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
 
     st.write("")
     st.write("")
+
+    st.markdown("""
+    Les indicateurs de dispersion permettent d’évaluer l’hétérogénéité territoriale.
+
+    - **Moyenne** : niveau moyen de prévalence.
+    - **Médiane** : valeur centrale.
+    - **Min / Max** : amplitude observée.
+    - **Écart-type** : niveau de variabilité.
+
+    Une forte dispersion peut indiquer des inégalités territoriales marquées.
+    """)
 
     st.markdown("### **Répartition des cas par tranche d'âge et par sexe**")
     df_filtered = df[(df["pathologie"] == pathologie) & (df["libelle_classe_age"] != "tous âges") & (df["libelle_sexe"] != "tous sexes")]
@@ -149,7 +185,14 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     ax2.ticklabel_format(style='plain', axis='x')
     ax2.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))  
     st.pyplot(fig2)
+    st.markdown("""
+    La structure par âge permet d’identifier les classes démographiques les plus concernées.
 
+    Deux éléments doivent être distingués :
+    - Le nombre total de cas (volume).
+    - La prévalence (risque relatif dans la tranche d’âge).
+    A la différence du tableau précédent, le calcul de cette structure englobe tous les sexes.
+    """)
     st.write("")
     st.write("")
 

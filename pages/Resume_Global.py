@@ -51,7 +51,7 @@ def page_resume_global(df: pd.DataFrame):
     st.markdown(
     """
     Les lignes correspondent au jeu de données filtré :
-    les agrégats nationaux ("Toute la France"), les modalités globales ("tous sexes") 
+    les agrégats nationaux ("Toute la France"), les modalités globales ("tous sexes", "tous âges") 
     et les lignes avec des données manquantes ont été exclus afin d’éviter les doubles 
     comptages ou données qui fausseraient les statistiques.
     """)
@@ -70,8 +70,8 @@ def page_resume_global(df: pd.DataFrame):
 
     st.markdown(
         """
-        - **Prévalence globale** : proportion totale de cas rapportée à la population de référence
-        - **Prévalence moyenne** : moyenne des prévalences calculées sur les sous-groupes
+        - **Prévalence globale** : proportion totale de cas rapportée à la population de référence ((total des cas / population totale) * 100)
+        - **Prévalence moyenne** : moyenne des prévalences calculées sur les sous-groupes (cumul des prevalences par ligne étudiée / nombre de lignes étudiées)
         """
     )
 
@@ -109,7 +109,8 @@ def page_resume_global(df: pd.DataFrame):
         - des ruptures éventuelles,
         - des années atypiques.
         
-        Une augmentation peut refléter une évolution réelle de la pathologie,
+        Une augmentation peut refléter une évolution réelle des prises en 
+        charge de traitements/pathologies par l’ensemble des régimes d’assurance maladie,
         mais aussi un changement de méthodologie ou de dépistage.
         """
     )
@@ -133,10 +134,7 @@ def page_resume_global(df: pd.DataFrame):
         """
         Cette visualisation met en évidence les pathologies/traitements concentrant
         le plus grand volume de cas sur la période étudiée.
-
-        Cette visualisation met en évidence les pathologies concentrant
-        le plus grand volume de cas sur la période étudiée.
-
+        
         Une forte concentration sur quelques pathologies peut orienter
         les priorités d'analyse pour les pages suivantes.
         
