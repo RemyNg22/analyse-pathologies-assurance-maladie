@@ -61,10 +61,7 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
         col7.metric("Prévalence Femmes (%)", stats_sexe.loc["femmes", "prevalence_globale"])
 
     st.markdown("### **Répartition des cas et de la prévalence par sexe**")
-    st.markdown("Le graphique ci-dessous présente :\n"
-        "- le nombre total de cas par sexe\n"
-        "- la prévalence globale par sexe"
-    )
+    st.markdown("Le graphique ci-dessous présente le nombre total de cas par sexe.")
 
     fig1, ax1 = plt.subplots()
     ax1.bar(stats_sexe.index, stats_sexe["Ntop_totale"])
@@ -187,11 +184,7 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     st.pyplot(fig2)
     st.markdown("""
     La structure par âge permet d’identifier les classes démographiques les plus concernées.
-
-    Deux éléments doivent être distingués :
-    - Le nombre total de cas (volume).
-    - La prévalence (risque relatif dans la tranche d’âge).
-    A la différence du tableau précédent, le calcul de cette structure englobe tous les sexes.
+    Le calcul ici se fait, à la différence du tableau précédent, par le volument de cas tout sexe confondu.
     """)
     st.write("")
     st.write("")

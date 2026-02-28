@@ -129,18 +129,9 @@ def anomalies(df: pd.DataFrame, pathologie: str):
         color_continuous_scale="RdBu",
         origin="lower",
         title="Heatmap des z-scores par année")
-
-    fig3.update_layout(height=1200)
-    n_annees = len(pivot.columns)
-    for i in range(n_annees - 1):
-        fig3.add_shape(type="line",
-            x0=i + 0.5, x1=i + 0.5,
-            y0=-0.5, y1=len(pivot.index) - 0.5,
-            line=dict(color="black", width=1),
-            layer="above")
+    
+    fig3.update_layout(height=1000)
     st.plotly_chart(fig3, use_container_width=True)
-
-
 
     st.markdown(
             """
@@ -204,7 +195,7 @@ def anomalies(df: pd.DataFrame, pathologie: str):
     - < 0.5 -> distribution homogène
     - 0.5 à 1 -> dispersion modérée
     - 1 à 2 -> forte hétérogénéité
-    - > ou = 2 -> déséquilibre structurel important
+    - supérieur ou égal 2 -> déséquilibre structurel important
 
     Cet indicateur synthétise le niveau global d'écart entre départements.
     """
