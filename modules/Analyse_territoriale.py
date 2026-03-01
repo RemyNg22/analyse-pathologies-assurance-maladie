@@ -149,7 +149,7 @@ def analyse_territoriale(df: pd.DataFrame, pathologie: str):
     orientation="h",
     title="Ecart à la moyenne nationale",
     height=1500,
-    labels={"ecart_a_la_moyenne": "Écart (%)", "departement_nom": "Département"})
+    labels={"ecart_a_la_moyenne": "Écart de prévalence (points)", "departement_nom": "Département"})
 
     st.plotly_chart(fig3, use_container_width=True)
 
