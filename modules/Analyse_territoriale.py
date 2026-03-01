@@ -157,7 +157,7 @@ def analyse_territoriale(df: pd.DataFrame, pathologie: str):
     """
     Ce graphique montre l'**écart de prévalence de chaque département par rapport à la moyenne nationale** pour la pathologie sélectionnée.  
 
-    - L'axe horizontal (`Écart (%)`) représente la différence entre la prévalence départementale et la prévalence nationale.  
+    - L'axe horizontal (`Écart (points)`) représente la différence entre la prévalence départementale et la prévalence nationale.  
     - L'axe vertical affiche les départements (`Département`).  
     - Les barres à droite de zéro indiquent des départements où la prévalence est supérieure à la moyenne nationale,  
     tandis que les barres à gauche indiquent une prévalence inférieure à la moyenne.  
