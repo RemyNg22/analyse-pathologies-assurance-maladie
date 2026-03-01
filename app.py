@@ -1,24 +1,23 @@
 import streamlit as st
 from core.stats_pandas import charger_effectifs
-from pages.Resume_Global import resume_global, page_resume_global
-from pages.Analyse_Pathologies import analyse_pathologie
-from pages.Analyse_territoriale import analyse_territoriale
-from pages.Analyse_temporelle import analyse_temporelle
-from pages.Anomalies import anomalies
+from modules.Resume_Global import resume_global, page_resume_global
+from modules.Analyse_Pathologies import analyse_pathologie
+from modules.Analyse_territoriale import analyse_territoriale
+from modules.Analyse_temporelle import analyse_temporelle
+from modules.Anomalies import anomalies
 
 """
 Application principale du dashboard d'analyse des pathologies/traitements pris en charge.
 
-Rôle :
-- Charger les données
-- Gérer la navigation entre les pages (Veuillez utiliser le menu déroulant et non les pages de la barre latérale)
-- Centraliser les sélections utilisateur (sidebar)
-- Appeler les fonctions d'analyse (script d'analyse stats_pandas.py)
+### Rôle de l’application
 
+- Charger les données  
+- Appeler les fonctions d'analyse (`stats_pandas.py`)  
+- Visualiser les statistiques par pathologies/traitements  s
+
+**Navigation :**  
+La navigation s’effectue exclusivement via le **menu déroulant dans la barre latérale**.
 """
-
-
-st.set_page_config(page_title="Dashboard Pathologies/Traitements", layout="wide")
 
 # Chargement des données
 @st.cache_data
@@ -26,6 +25,10 @@ def load_data():
     return charger_effectifs()
 
 df = load_data()
+
+st.set_page_config(page_title="Dashboard Pathologies/Traitements", layout="wide")
+
+st.divider()
 
 # Sidebar : sélection de la page
 st.sidebar.title("Navigation")
@@ -65,3 +68,4 @@ elif page == "Analyse temporelle":
 
 elif page == "Anomalies":
     anomalies(df, pathologie)
+

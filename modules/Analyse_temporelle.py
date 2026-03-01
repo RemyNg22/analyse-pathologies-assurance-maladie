@@ -97,7 +97,7 @@ def analyse_temporelle(df: pd.DataFrame, pathologie: str) -> dict:
 
     ax1.set_xlabel("Année")
     ax1.set_ylabel("Prévalence (%)")
-    ax1.set_title("Evolution annuelle")
+    ax1.set_title(f"Evolution annuelle ({pathologie})")
     ax1.legend()
     st.pyplot(fig1)
 
@@ -125,7 +125,7 @@ def analyse_temporelle(df: pd.DataFrame, pathologie: str) -> dict:
         ax2.axhline(0)
         ax2.set_xlabel("Année")
         ax2.set_ylabel("Variation absolue (%)")
-        ax2.set_title("Variation annuelle")
+        ax2.set_title(f"Variation annuelle ({pathologie})")
         st.pyplot(fig2)
 
         st.markdown("""
@@ -179,7 +179,7 @@ def analyse_temporelle(df: pd.DataFrame, pathologie: str) -> dict:
         
         ax3.set_xlabel("Année")
         ax3.set_ylabel("Moyenne absolue des z-scores")
-        ax3.set_title("Dispersion territoriale annuelle")
+        ax3.set_title(f"Dispersion territoriale annuelle ({pathologie})")
         ax3.legend()
         st.pyplot(fig3)
 
@@ -219,7 +219,7 @@ def analyse_temporelle(df: pd.DataFrame, pathologie: str) -> dict:
 
         ax4.set_xlabel("Année")
         ax4.set_ylabel("Prévalence départementale (%)")
-        ax4.set_title("Distribution annuelle des prévalences départementales")
+        ax4.set_title(f"Distribution annuelle des prévalences départementales ({pathologie})")
 
         st.pyplot(fig4)
 

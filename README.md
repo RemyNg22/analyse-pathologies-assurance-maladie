@@ -19,7 +19,8 @@ Il est composé comme suit :
 
 ## Jeu de données
 
-**Source** : data.gouv.fr – [https://www.data.gouv.fr/datasets/pathologies-effectif-de-patients-par-pathologie-sexe-classe-dage-et-territoire-departement-region](Cartographie des pathologies et des dépenses de l’Assurance Maladie).
+**Source** : data.gouv.fr – [https://www.data.gouv.fr/datasets/pathologies-effectif-de-patients-par-pathologie-sexe-classe-dage-et-territoire-departement-region]
+
 
 Les données décrivent les effectifs de patients pris en charge par l’ensemble des régimes d’assurance maladie, selon :
 - la pathologie, le traitement chronique ou l’épisode de soins

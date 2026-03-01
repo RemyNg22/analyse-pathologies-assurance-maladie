@@ -59,25 +59,32 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     
     if "femmes" in stats_sexe.index:
         col7.metric("Prévalence Femmes (%)", stats_sexe.loc["femmes", "prevalence_globale"])
-
-    st.markdown("### **Répartition des cas et de la prévalence par sexe**")
-    st.markdown("Le graphique ci-dessous présente le nombre total de cas par sexe.")
+    
+    st.markdown("### Répartition des cas par sexe")
 
     fig1, ax1 = plt.subplots()
     ax1.bar(stats_sexe.index, stats_sexe["Ntop_totale"])
     ax1.set_xlabel("Sexe")
     ax1.set_ylabel("Nombre de cas")
-    ax1.set_title("Nombre de cas par sexe")
+    ax1.set_title(f"Nombre de cas par sexe ({pathologie})")
     ax1.ticklabel_format(style='plain', axis='y')
     ax1.yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))  
     st.pyplot(fig1)
 
+    st.markdown("""
+    Ce graphique montre le **nombre total de patients pris en charge** pour cette pathologie,  
+    répartis entre hommes et femmes.
+
+    - Chaque barre correspond au volume brut de cas.
+    - Une barre plus haute indique un plus grand nombre de patients.
+    - Ce graphique ne prend pas en compte la taille de la population par sexe,  
+    il ne reflète donc pas directement le risque relatif.
+    """)
+
     st.write("")
     st.write("")
-    st.markdown("Le prochain présente :\n"
-    "- la part entre hommes et femmes pour le traitement/pathologie concerné\n"
-    "- la prévalence globale par sexe"
-)
+
+    st.markdown("### Prévalence globale par sexe")
 
     labels = stats_sexe.index
     sizes = stats_sexe["prevalence_globale"]
@@ -99,26 +106,35 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
         textprops=dict(color="w")
     )
 
-    ax2.set_title("Prévalence globale par sexe")
+    ax2.set_title(f"Prévalence globale par sexe ({pathologie})")
 
 
     ax2.legend(wedges, labels, title="Sexe", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
 
     st.pyplot(fig2)
 
-    st.write("")
-    st.write("")
+    st.markdown("""
+    Le graphique suivant représente la **prévalence** (taux de cas par population) pour chaque sexe.  
+
+    - Permet d’évaluer le **risque relatif**, indépendamment de la taille de la population.  
+    - Un sexe peut avoir **plus de cas** mais une **prévalence plus faible** si sa population est plus grande.
+    """)
 
     st.markdown("""
-    L’analyse par sexe permet d’identifier d’éventuelles disparités épidémiologiques.
+    ### Interprétation
 
-    Deux dimensions sont étudiées :
-    - Le volume de cas.
-    - Le taux de prévalence.
+    L’analyse par sexe permet d’identifier d’éventuelles **disparités épidémiologiques**.  
 
-    Une différence de volume ne signifie pas nécessairement une différence de risque.
-    La prévalence permet une comparaison à structure démographique équivalente.
+    Deux dimensions sont examinées :
+
+    1. **Volume de cas** : nombre absolu de patients par sexe.  
+    2. **Taux de prévalence** : proportion de patients par rapport à la population totale du sexe.
+
+    > Une différence de volume ne signifie pas forcément une différence de risque.  
+    > La prévalence permet une comparaison **normalisée par population**, pour mieux évaluer le risque relatif.
     """)
+    
+    st.divider()
 
     st.markdown("### **Dispersion des prévalences : hommes**")
 
@@ -156,40 +172,52 @@ def analyse_pathologie(df: pd.DataFrame, pathologie: str):
     Une forte dispersion peut indiquer des inégalités territoriales marquées.
     """)
 
-    st.markdown("### **Répartition des cas par tranche d'âge et par sexe**")
-    df_filtered = df[(df["pathologie"] == pathologie) & (df["libelle_classe_age"] != "tous âges") & (df["libelle_sexe"] != "tous sexes")]
-
-    df_filtered["libelle_classe_age"] = pd.Categorical(df_filtered["libelle_classe_age"], categories=Conversion_donnees.ORDRE_TRANCHES_AGE, ordered=True)
-
-    pivot = df_filtered.groupby(["libelle_classe_age", "libelle_sexe"])["Ntop"].sum().unstack()
-
-    pivot.plot(kind="barh")
-    st.pyplot(plt.gcf())
 
     st.divider()
 
+    st.markdown("### Répartition des cas par tranche d'âge et par sexe (empilé)")
 
-    # Répartition par âge
+    df_filtered = df[
+        (df["pathologie"] == pathologie) &
+        (df["libelle_classe_age"] != "tous âges") &
+        (df["libelle_sexe"] != "tous sexes")
+    ]
 
-    st.subheader("Structure par tranche d'âge")
+    df_filtered["libelle_classe_age"] = pd.Categorical(
+        df_filtered["libelle_classe_age"],
+        categories=Conversion_donnees.ORDRE_TRANCHES_AGE,
+        ordered=True
+    )
 
-    stats_age = stats_par_tranche_age(df, pathologie)
+    pivot = df_filtered.groupby(["libelle_classe_age", "libelle_sexe"])["Ntop"].sum().unstack(fill_value=0)
 
-    fig2, ax2 = plt.subplots()
-    ax2.barh(stats_age.index, stats_age["Ntop_totale"])
-    ax2.set_xlabel("Nombre de cas")
-    ax2.set_title("Distribution des cas par tranche d'âge")
-    ax2.ticklabel_format(style='plain', axis='x')
-    ax2.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))  
-    st.pyplot(fig2)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    pivot.plot(kind="barh", stacked=True, ax=ax, color={"hommes":"#1d45b3", "femmes":"#f82408"})
+
+    ax.set_xlabel("Nombre de cas")
+    ax.set_ylabel("Tranche d'âge")
+    ax.set_title(f"Répartition des cas par tranche d'âge et par sexe ({pathologie})")
+    ax.ticklabel_format(style='plain', axis='x')
+    ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))
+
+    ax.legend(title="Sexe", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+
+    st.pyplot(fig)
+
     st.markdown("""
-    La structure par âge permet d’identifier les classes démographiques les plus concernées.
-    Le calcul ici se fait, à la différence du tableau précédent, par le volument de cas tout sexe confondu.
+    Ce graphique empilé permet d’analyser **simultanément le volume total de cas par tranche d’âge** et la **répartition entre hommes et femmes**.
+
+    - Chaque barre correspond à une tranche d’âge.
+    - Les couleurs indiquent le sexe : bleu pour les hommes, rouge pour les femmes.
+    - Le total de la barre représente le volume global de cas pour la tranche.
+    - Cette représentation permet de comparer facilement les sexes au sein de chaque tranche tout en visualisant le volume global.
+    - Pour évaluer le **risque relatif**, il faut se référer à la prévalence (cas / population) et non au volume brut.
     """)
     st.write("")
     st.write("")
 
     st.markdown("### **Tableau des prévalences et parts par tranche d'âge**")
+    stats_age = stats_par_tranche_age(df, pathologie)
     total_age = stats_age["Ntop_totale"].sum()
     stats_age["%"] = (stats_age["Ntop_totale"] / total_age * 100).round(3)
     stats_age = stats_age.reset_index().rename(columns={"libelle_classe_age" : "Tranche d'âge", "Ntop_totale": "Nombre total de cas", "Npop_totale": "Population totale", 

@@ -8,6 +8,55 @@ from core.stats_pandas import (
 )
 
 def resume_global(df: pd.DataFrame) -> dict:
+
+    st.title("Analyse des pathologies – Assurance Maladie (France)")
+
+
+    st.markdown("""
+    ### Présentation du projet
+
+    Ce projet a pour objectif d’analyser les **effectifs de patients pris en charge par pathologie/traitement en France**, 
+    à partir des données ouvertes de l’Assurance Maladie (CNAM).
+
+    L’analyse est réalisée selon plusieurs dimensions :
+
+    - **Le sexe** (hommes / femmes)
+    - **La classe d’âge**
+    - **L’année d’observation**
+    - **Le territoire** (département)
+
+    ### Description du jeu de données
+                
+    Source des données :  
+    <a href="https://www.data.gouv.fr/datasets/pathologies-effectif-de-patients-par-pathologie-sexe-classe-dage-et-territoire-departement-region" target="_blank">
+    Données ouvertes – CNAM (data.gouv.fr)
+    </a>
+
+    Le jeu de données utilisé provient des données ouvertes de la CNAM.  
+    Il contient, pour chaque combinaison de critères :
+
+    - Le nombre de patients pris en charge
+    - La population de référence
+    - Les indicateurs permettant de calculer la **prévalence**
+
+    Chaque ligne correspond à une pathologie (ou traitement), 
+    déclinée par territoire, sexe, classe d’âge et année.
+
+
+    ### Objectifs analytiques
+
+    Ce dashboard permet notamment de :
+
+    - Étudier la répartition des pathologies selon les caractéristiques démographiques
+    - Comparer les territoires
+    - Observer les évolutions temporelles
+    - Identifier d’éventuelles anomalies statistiques
+
+    L’ensemble des visualisations proposées vise à faciliter la lecture et l’interprétation des tendances.
+    Le jeu de données a été préalablement filtré afin de conserver uniquement les variables pertinentes pour l’analyse.
+    """, unsafe_allow_html=True)
+
+    st.divider()
     """
     Résumé global des données.
     """
@@ -23,6 +72,7 @@ def resume_global(df: pd.DataFrame) -> dict:
     }
 
 def page_resume_global(df: pd.DataFrame):
+
 
     st.title("Résumé global")
     st.caption("Synthèse du jeu de données et des indicateurs épidémiologiques.")
