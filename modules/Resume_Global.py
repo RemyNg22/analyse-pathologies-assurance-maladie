@@ -9,6 +9,22 @@ from core.stats_pandas import (
 
 def resume_global(df: pd.DataFrame) -> dict:
 
+    """
+    Résumé global des données.
+    """
+    return {
+        "Nombre de lignes": nombre_de_lignes(df),
+        "Nombre de pathologies distinctes": pathologies_distinctes(df),
+        "Nombre de départements distincts": departements_distincts(df),
+        "Nombre d'années distinctes": annees_distinctes(df),
+        "Nombre total de cas": nombre_de_cas(df),
+        "Population totale": population_reference(df),
+        "Prévalence globale (%)": prevalence_globale(df),
+        "Prévalence moyenne (%)": prevalence_moyenne(df)
+    }
+
+def page_resume_global(df: pd.DataFrame):
+
     st.title("Analyse des pathologies – Assurance Maladie (France)")
 
 
@@ -57,22 +73,6 @@ def resume_global(df: pd.DataFrame) -> dict:
     """, unsafe_allow_html=True)
 
     st.divider()
-    """
-    Résumé global des données.
-    """
-    return {
-        "Nombre de lignes": nombre_de_lignes(df),
-        "Nombre de pathologies distinctes": pathologies_distinctes(df),
-        "Nombre de départements distincts": departements_distincts(df),
-        "Nombre d'années distinctes": annees_distinctes(df),
-        "Nombre total de cas": nombre_de_cas(df),
-        "Population totale": population_reference(df),
-        "Prévalence globale (%)": prevalence_globale(df),
-        "Prévalence moyenne (%)": prevalence_moyenne(df)
-    }
-
-def page_resume_global(df: pd.DataFrame):
-
 
     st.title("Résumé global")
     st.caption("Synthèse du jeu de données et des indicateurs épidémiologiques.")
