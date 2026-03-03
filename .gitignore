@@ -15,3 +15,8 @@ data/effectifs.csv
 Test_LOADER_CSV.py
 Test_STATS_PANDAS.py
 Test_STATS_PYTHON.py
+
+# Checkpoints notebook
+.ipynb_checkpoints/
+
+notebook/.ipynb_checkpoints/

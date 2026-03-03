@@ -6,12 +6,11 @@ Le projet est volontairement construit en **deux approches** :
 - une approche en **Python pur** (listes de dictionnaires)
 - une approche avec **pandas** (DataFrame, parquet)
 
-Le projet est **en cours de développement**.  
-Il est composé comme suit :
+Le projet est composé comme suit :
 - **une app streamlit** pour montrer visuellement les statistiques, le lien est le suivant :
 [https://analyse-pathologies-assurance-maladie.streamlit.app/](https://analyse-pathologies-assurance-maladie.streamlit.app/)
-- un notebook de l'approche en **Python pur**,
-- un notebook de l'approche avec **Pandas**
+- un notebook de l'approche en **Python pur** : [https://github.com/RemyNg22/analyse-pathologies-assurance-maladie/blob/main/notebooks/notebook_python_pur.ipynb](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie/blob/main/notebooks/notebook_python_pur.ipynb),
+- un notebook de l'approche avec **Pandas** : [https://github.com/RemyNg22/analyse-pathologies-assurance-maladie/blob/main/notebooks/notebook_pandas.ipynb](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie/blob/main/notebooks/notebook_pandas.ipynb)
 - le code complet visible sur GitHub :
 [https://github.com/RemyNg22/analyse-pathologies-assurance-maladie](https://github.com/RemyNg22/analyse-pathologies-assurance-maladie)
 
@@ -84,12 +83,13 @@ Analyse_pathologie/
 ```text
 Analyse_pathologie/
 │
-├─ data/                  # Parquet compressé ou échantillon + carte geojson
+├─ data/                  # Parquet compressé et échantillon + carte geojson
 │   └─ effectifs.parquet
 │   └─ departements.geojson
+│   └─ echantillon_effectifs.csv
 ├─ notebooks/             # Demo analyse CSV / Pandas
-│   ├─ demo_pandas.ipynb
-│   └─ demo_pure_python.ipynb
+│   ├─ notebook_pandas.ipynb
+│   └─ notebook_python_pur.ipynb
 │
 ├─ core/               # Fonctions réutilisables
 │   ├─ stats_pandas.py
