@@ -9,7 +9,7 @@ venv/
 architecture.txt
 
 # Fichier de données (850Mo)
-data/*.csv
+data/effectifs.csv
 
 # Fichier test
 Test_LOADER_CSV.py
